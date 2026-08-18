@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Which Brownsea patrol are you?</title>
-<meta name="description" content="Seven questions to find your 1907 Brownsea patrol. 120 years of Scouting. UK Pavilion, WSJ Gdańsk 2027.">
+<meta name="description" content="Seven questions to find your 1907 Brownsea patrol. 120 years of Scouting. UK Pavilion, 26th World Scout Jamboree, Gdańsk 2027.">
+<meta name="theme-color" content="#3B382A">
 <style>
   :root{
     --canvas:#3B382A;      /* tent canvas at dusk */
@@ -21,7 +22,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
-    font-family:var(--serif);
+    font-family:var(--sans);
     background:var(--canvas);
     color:var(--calico);
     transition:background-color .6s ease,color .6s ease;
@@ -41,14 +42,16 @@
   }
 
   /* ---------- the streamer (signature element) ---------- */
+  /* Sits in its own gutter: .wrap reserves 52px of left padding on
+     narrow screens so the ribbon never touches the text column. */
   .streamer{
-    position:fixed;top:0;left:18px;width:13px;height:0;
+    position:fixed;top:0;left:12px;width:12px;height:0;
     background:var(--brass);opacity:.85;z-index:5;
     clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 12px),0 100%);
     transition:height .5s cubic-bezier(.2,.7,.2,1),background-color .5s ease;
   }
-  body.result-mode .streamer{width:20px;left:22px;opacity:1;
-    clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 18px),0 100%);
+  body.result-mode .streamer{width:18px;opacity:1;
+    clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 16px),0 100%);
   }
   .intro-streamers{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;gap:14px;z-index:4;pointer-events:none}
   .intro-streamers i{
@@ -65,29 +68,37 @@
   /* ---------- layout ---------- */
   .wrap{
     min-height:100%;max-width:28rem;margin:0 auto;
-    padding:120px 24px 48px;display:flex;flex-direction:column;justify-content:flex-start;
+    padding:110px 22px 48px 52px;display:flex;flex-direction:column;justify-content:flex-start;
+  }
+  @media (min-width:560px){
+    .wrap{padding-left:24px;padding-right:24px}
   }
   .screen{animation:fadeup .35s ease both}
   @keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
   .eyebrow{
-    font-family:var(--sans);font-size:.68rem;font-weight:600;
+    font-size:.68rem;font-weight:600;
     letter-spacing:.22em;text-transform:uppercase;opacity:.75;margin-bottom:14px;
   }
   .rule{border:none;border-top:1px solid currentColor;opacity:.25;margin:26px 0}
 
   /* ---------- intro ---------- */
-  .fleur{font-size:2rem;color:var(--brass);margin-bottom:18px}
-  body.result-curlews .fleur{color:var(--ink)}
-  h1{font-size:2.1rem;line-height:1.12;font-weight:700;letter-spacing:-.01em;margin-bottom:16px}
-  .dek{font-size:1.05rem;line-height:1.55;opacity:.9;max-width:24rem}
-  .dek em{font-style:italic}
-  .smallnote{font-family:var(--sans);font-size:.75rem;opacity:.6;margin-top:14px}
+  .emblem{display:block;color:var(--brass);margin-bottom:18px}
+  body.result-curlews .emblem{color:var(--ink)}
+  h1{font-family:var(--serif);font-size:2.05rem;line-height:1.12;font-weight:700;letter-spacing:-.01em;margin-bottom:16px}
+  .dek{font-size:1rem;line-height:1.55;opacity:.9;max-width:24rem}
+  .smallnote{font-size:.75rem;opacity:.6;margin-top:14px}
+
+  .cobrand{
+    display:flex;align-items:center;gap:10px;margin-top:34px;opacity:.7;
+    font-size:.66rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;line-height:1.5;
+  }
+  .cobrand svg{flex:none;color:currentColor}
 
   /* ---------- buttons ---------- */
   .btn{
     display:block;width:100%;text-align:left;cursor:pointer;
-    font-family:var(--serif);font-size:1.02rem;line-height:1.4;
+    font-family:var(--sans);font-size:.98rem;line-height:1.45;font-weight:500;
     color:inherit;background:transparent;
     border:1px solid rgba(239,231,210,.45);border-radius:10px;
     padding:14px 16px;margin-top:12px;
@@ -104,27 +115,42 @@
   }
   .btn.ghost{text-align:center}
   .backlink{
-    font-family:var(--sans);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
+    font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
     background:none;border:none;color:inherit;opacity:.55;cursor:pointer;margin-top:26px;padding:6px 0;
   }
   .backlink:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
 
   /* ---------- question ---------- */
-  .flavour{font-style:italic;font-size:.92rem;line-height:1.5;opacity:.72;margin-bottom:10px}
-  .prompt{font-size:1.45rem;line-height:1.3;font-weight:700;margin-bottom:8px}
+  .flavour{font-size:.86rem;line-height:1.5;opacity:.7;margin-bottom:10px}
+  .prompt{font-size:1.32rem;line-height:1.32;font-weight:700;margin-bottom:8px}
 
   /* ---------- result ---------- */
-  .patrolname{font-size:3.1rem;line-height:1;font-weight:700;text-transform:uppercase;letter-spacing:.02em;margin:6px 0 10px}
-  .tagline{font-size:1.15rem;font-style:italic;opacity:.92}
-  .traits{font-family:var(--sans);font-size:.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin-top:14px}
-  .roster p{font-size:1rem;line-height:1.6}
-  .fact{font-style:italic;font-size:.95rem;line-height:1.55;opacity:.9;margin-top:16px}
+  .patrolname{font-family:var(--serif);font-size:3rem;line-height:1;font-weight:700;text-transform:uppercase;letter-spacing:.02em;margin:6px 0 10px}
+  .tagline{font-size:1.1rem;font-style:italic;opacity:.92}
+  .traits{font-size:.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin-top:14px}
+  .roster p{font-size:.98rem;line-height:1.6}
+  .fact{font-size:.92rem;line-height:1.55;opacity:.85;margin-top:16px}
+  .history{font-size:.72rem;line-height:1.5;opacity:.6;margin-top:26px}
+
+  /* ---------- pavilion CTA ---------- */
   .cta{
-    border:1px solid currentColor;border-radius:12px;padding:18px;margin-top:8px;
+    background:var(--ink);color:var(--calico);
+    border-radius:14px;padding:20px 18px;margin-top:8px;
   }
-  .cta p{font-size:.98rem;line-height:1.55}
-  .cta .eyebrow{margin-bottom:8px}
-  .history{font-family:var(--sans);font-size:.72rem;line-height:1.5;opacity:.6;margin-top:26px}
+  .cta .eyebrow{color:var(--brass);opacity:1;margin-bottom:10px}
+  .cta p{font-size:.95rem;line-height:1.55}
+  .cta form{margin-top:14px}
+  .cta input[type=email]{
+    display:block;width:100%;
+    font-family:var(--sans);font-size:16px;  /* 16px stops iOS zooming the page on focus */
+    color:var(--ink);background:var(--calico);
+    border:1px solid rgba(38,34,24,.3);border-radius:10px;
+    padding:13px 14px;
+  }
+  .cta input[type=email]:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+  .cta .btn.primary{margin-top:10px}
+  .cta .note{font-size:.82rem;line-height:1.5;margin-top:10px;min-height:1em;opacity:.9}
+  .cta .fineprint{font-size:.7rem;opacity:.6;margin-top:10px}
 
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation:none!important;transition:none!important}
@@ -139,6 +165,39 @@
 <main class="wrap" id="app" aria-live="polite"></main>
 
 <script>
+/* ============================================================
+   CONTACT — where "Count me in" sign-ups go.
+   PLACEHOLDER: both fields are empty, so the button shows a
+   friendly "come and find the team" message instead of sending
+   anything. To go live, set ONE of these:
+     email:   the Pavilion inbox — opens the visitor's mail app
+              pre-addressed, with their email and patrol filled in
+     formUrl: a Google Form / Tally / Formspree link — the button
+              opens it (takes priority over email if both are set)
+   ============================================================ */
+const CONTACT = { email:"", formUrl:"" };
+
+/* Scout emblem: line-art fleur-de-lis with the two stars, bound
+   with a band, ringed by the rope and reef knot. */
+const EMBLEM_PATHS = `
+  <circle cx="48" cy="46" r="40" stroke="currentColor" stroke-width="3" fill="none"/>
+  <path d="M38 84 c3 5 8 6 10 2 c2 -4 7 -3 10 2" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M58 84 c-3 5 -8 6 -10 2 c-2 -4 -7 -3 -10 2" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M48 10 C42.5 21 42.5 33 48 46 C53.5 33 53.5 21 48 10 Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round" fill="none"/>
+  <path d="M44.5 45 C34 41.5 27 33.5 27 25.5 C27 21.5 29 18.6 32 17.6 C31.2 27 37 38 44.5 42.2 Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round" fill="none"/>
+  <path d="M51.5 45 C62 41.5 69 33.5 69 25.5 C69 21.5 67 18.6 64 17.6 C64.8 27 59 38 51.5 42.2 Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round" fill="none"/>
+  <path transform="translate(33.5 28)" d="M0 -4.6 L1.3 -1.5 L4.6 -1.4 L2 .8 L2.8 4 L0 2.2 L-2.8 4 L-2 .8 L-4.6 -1.4 L-1.3 -1.5 Z" fill="currentColor"/>
+  <path transform="translate(62.5 28)" d="M0 -4.6 L1.3 -1.5 L4.6 -1.4 L2 .8 L2.8 4 L0 2.2 L-2.8 4 L-2 .8 L-4.6 -1.4 L-1.3 -1.5 Z" fill="currentColor"/>
+  <rect x="37" y="47" width="22" height="6" rx="3" stroke="currentColor" stroke-width="3" fill="none"/>
+  <path d="M43 56 C43 62 45 66 48 69 C51 66 53 62 53 56 Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round" fill="none"/>`;
+function emblem(size){
+  return `<svg class="emblem" width="${size}" height="${size}" viewBox="0 0 96 96" role="img" aria-label="Scout emblem">${EMBLEM_PATHS}</svg>`;
+}
+const COBRAND = `<div class="cobrand">
+  <svg width="26" height="26" viewBox="0 0 96 96" aria-hidden="true">${EMBLEM_PATHS}</svg>
+  <span>UK Pavilion &middot; 26th World Scout Jamboree &middot; Gda&nacute;sk 2027</span>
+</div>`;
+
 /* ============================================================
    DATA — edit copy here
    ============================================================ */
@@ -310,12 +369,13 @@ function renderIntro(){
   introStreamers.style.display = "flex";
   app.innerHTML = `
     <div class="screen">
-      <div class="fleur" aria-hidden="true">&#9884;</div>
+      ${emblem(56)}
       <p class="eyebrow">Gilwell Reunion &middot; UK Pavilion</p>
       <h1>Which Brownsea patrol are you?</h1>
       <p class="dek">1 August 1907. Twenty boys, four patrols, one island, and the camp that started it all. Seven questions to find where you'd have pitched your tent.</p>
       <button class="btn primary" id="startBtn">Sound the kudu horn</button>
       <p class="smallnote">About 90 seconds. Wolves, Bulls, Curlews and Ravens await.</p>
+      ${COBRAND}
     </div>`;
   document.getElementById("startBtn").addEventListener("click", startQuiz);
 }
@@ -364,16 +424,43 @@ function renderResult(){
       </div>
       <hr class="rule">
       <div class="cta">
-        <p class="eyebrow">The story continues</p>
-        <p>120 years after four patrols camped on Brownsea Island, the World Scout Jamboree lands in Gda&nacute;sk, 30 July to 8 August 2027. Find the UK Pavilion team at Reunion to be part of it.</p>
+        <p class="eyebrow">Help build the UK Pavilion</p>
+        <p>120 years after four patrols camped on Brownsea Island, the 26th World Scout Jamboree lands in Gda&nacute;sk, 30 July to 8 August 2027 &mdash; and the UK Pavilion is being designed <em>right now</em>.</p>
+        <p style="margin-top:8px"><strong>Come and talk to the UK Pavilion team at Reunion today</strong>, and leave your email to help shape what the UK shows the world.</p>
+        <form id="pavilionForm" novalidate>
+          <input type="email" id="sigEmail" inputmode="email" autocomplete="email" placeholder="you@example.com" aria-label="Your email address">
+          <button class="btn primary" type="submit">Count me in</button>
+        </form>
+        <p class="note" id="sigNote" role="status"></p>
+        <p class="fineprint">We'll only use this to talk to you about the UK Pavilion.</p>
       </div>
       <button class="btn primary" id="shareBtn">Share my patrol</button>
       <button class="btn ghost" id="againBtn">Start again</button>
       <p class="history">The history bit: the real 1907 patrols weren't sorted by personality. BP deliberately mixed ages and backgrounds in every patrol. The traits are ours. The names, the colours and the camp are real.</p>
+      ${COBRAND}
     </div>`;
   document.getElementById("againBtn").addEventListener("click", renderIntro);
+  document.getElementById("pavilionForm").addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const addr = document.getElementById("sigEmail").value.trim();
+    const note = document.getElementById("sigNote");
+    if(CONTACT.formUrl){
+      window.open(CONTACT.formUrl, "_blank", "noopener");
+      note.textContent = "Opening the sign-up form...";
+    } else if(CONTACT.email){
+      if(!addr){ note.textContent = "Pop your email in first."; return; }
+      const subject = encodeURIComponent("UK Pavilion 2027 - count me in");
+      const body = encodeURIComponent(
+        "I'd like to help shape the UK Pavilion at the 26th World Scout Jamboree.\n\n" +
+        "My email: " + addr + "\nMy Brownsea patrol: " + pt.name);
+      window.location.href = "mailto:" + CONTACT.email + "?subject=" + subject + "&body=" + body;
+      note.textContent = "Opening your mail app - just press send.";
+    } else {
+      note.textContent = "Sign-up opens soon. For now, come and find the UK Pavilion team at Reunion - we'd love to talk.";
+    }
+  });
   document.getElementById("shareBtn").addEventListener("click", async (e)=>{
-    const text = "I'm in the " + pt.name + " patrol \u269C 120 years of Scouting since Brownsea. Which patrol are you?";
+    const text = "I'm in the " + pt.name + " patrol ⚜ 120 years of Scouting since Brownsea. Which patrol are you?";
     const url = window.location.href;
     if(navigator.share){
       try{ await navigator.share({title:"Brownsea Patrol Finder", text:text, url:url}); }catch(_){}
