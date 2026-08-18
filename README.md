@@ -4,4 +4,4 @@
 
 Live site: https://stuartridout.github.io/patrolfinder/
 
-The whole thing is a single static page (`index.html`), deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`.
+The whole thing is a single static page (`index.html`). GitHub Pages serves it from the `gh-pages` branch, and `.github/workflows/pages.yml` republishes that branch on every push to `main` — edit `index.html`, merge to `main`, and the site updates itself.
