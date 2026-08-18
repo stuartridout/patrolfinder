@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Which Brownsea patrol are you?</title>
+<meta name="description" content="Seven questions to find your 1907 Brownsea patrol. 120 years of Scouting. UK Pavilion, WSJ Gdańsk 2027.">
+<style>
+  :root{
+    --canvas:#3B382A;      /* tent canvas at dusk */
+    --calico:#EFE7D2;      /* unbleached cotton */
+    --ink:#262218;         /* letterpress ink */
+    --brass:#C09A4F;       /* badge brass */
+    --wolves:#2C5F8A;      /* indigo wool */
+    --bulls:#3E6B3F;       /* bottle-green wool */
+    --curlews:#DFA81E;     /* mustard wool */
+    --ravens:#A6362E;      /* madder-red wool */
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--serif);
+    background:var(--canvas);
+    color:var(--calico);
+    transition:background-color .6s ease,color .6s ease;
+    -webkit-font-smoothing:antialiased;
+  }
+  body.result-wolves{background:var(--wolves)}
+  body.result-bulls{background:var(--bulls)}
+  body.result-ravens{background:var(--ravens)}
+  body.result-curlews{background:var(--curlews);color:var(--ink)}
+
+  /* faint canvas weave */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;
+    background:
+      repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.5) 2px 3px),
+      repeating-linear-gradient(90deg,transparent 0 2px,rgba(255,255,255,.35) 2px 3px);
+  }
+
+  /* ---------- the streamer (signature element) ---------- */
+  .streamer{
+    position:fixed;top:0;left:18px;width:13px;height:0;
+    background:var(--brass);opacity:.85;z-index:5;
+    clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 12px),0 100%);
+    transition:height .5s cubic-bezier(.2,.7,.2,1),background-color .5s ease;
+  }
+  body.result-mode .streamer{width:20px;left:22px;opacity:1;
+    clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 18px),0 100%);
+  }
+  .intro-streamers{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;gap:14px;z-index:4;pointer-events:none}
+  .intro-streamers i{
+    width:11px;background:var(--calico);display:block;
+    clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 10px),0 100%);
+    animation:drop .7s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .intro-streamers i:nth-child(1){height:64px;background:var(--wolves);animation-delay:.05s}
+  .intro-streamers i:nth-child(2){height:88px;background:var(--bulls);animation-delay:.15s}
+  .intro-streamers i:nth-child(3){height:74px;background:var(--curlews);animation-delay:.25s}
+  .intro-streamers i:nth-child(4){height:96px;background:var(--ravens);animation-delay:.35s}
+  @keyframes drop{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+
+  /* ---------- layout ---------- */
+  .wrap{
+    min-height:100%;max-width:28rem;margin:0 auto;
+    padding:120px 24px 48px;display:flex;flex-direction:column;justify-content:flex-start;
+  }
+  .screen{animation:fadeup .35s ease both}
+  @keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  .eyebrow{
+    font-family:var(--sans);font-size:.68rem;font-weight:600;
+    letter-spacing:.22em;text-transform:uppercase;opacity:.75;margin-bottom:14px;
+  }
+  .rule{border:none;border-top:1px solid currentColor;opacity:.25;margin:26px 0}
+
+  /* ---------- intro ---------- */
+  .fleur{font-size:2rem;color:var(--brass);margin-bottom:18px}
+  body.result-curlews .fleur{color:var(--ink)}
+  h1{font-size:2.1rem;line-height:1.12;font-weight:700;letter-spacing:-.01em;margin-bottom:16px}
+  .dek{font-size:1.05rem;line-height:1.55;opacity:.9;max-width:24rem}
+  .dek em{font-style:italic}
+  .smallnote{font-family:var(--sans);font-size:.75rem;opacity:.6;margin-top:14px}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:block;width:100%;text-align:left;cursor:pointer;
+    font-family:var(--serif);font-size:1.02rem;line-height:1.4;
+    color:inherit;background:transparent;
+    border:1px solid rgba(239,231,210,.45);border-radius:10px;
+    padding:14px 16px;margin-top:12px;
+    transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .06s ease;
+  }
+  body.result-curlews .btn{border-color:rgba(38,34,24,.45)}
+  body.result-curlews .btn.primary{background:var(--ink);border-color:var(--ink);color:var(--calico)}
+  .btn:active{transform:scale(.985)}
+  .btn.picked{background:var(--brass);border-color:var(--brass);color:var(--ink)}
+  .btn:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+  .btn.primary{
+    background:var(--brass);border-color:var(--brass);color:var(--ink);
+    text-align:center;font-weight:700;letter-spacing:.02em;
+  }
+  .btn.ghost{text-align:center}
+  .backlink{
+    font-family:var(--sans);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
+    background:none;border:none;color:inherit;opacity:.55;cursor:pointer;margin-top:26px;padding:6px 0;
+  }
+  .backlink:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+
+  /* ---------- question ---------- */
+  .flavour{font-style:italic;font-size:.92rem;line-height:1.5;opacity:.72;margin-bottom:10px}
+  .prompt{font-size:1.45rem;line-height:1.3;font-weight:700;margin-bottom:8px}
+
+  /* ---------- result ---------- */
+  .patrolname{font-size:3.1rem;line-height:1;font-weight:700;text-transform:uppercase;letter-spacing:.02em;margin:6px 0 10px}
+  .tagline{font-size:1.15rem;font-style:italic;opacity:.92}
+  .traits{font-family:var(--sans);font-size:.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin-top:14px}
+  .roster p{font-size:1rem;line-height:1.6}
+  .fact{font-style:italic;font-size:.95rem;line-height:1.55;opacity:.9;margin-top:16px}
+  .cta{
+    border:1px solid currentColor;border-radius:12px;padding:18px;margin-top:8px;
+  }
+  .cta p{font-size:.98rem;line-height:1.55}
+  .cta .eyebrow{margin-bottom:8px}
+  .history{font-family:var(--sans);font-size:.72rem;line-height:1.5;opacity:.6;margin-top:26px}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="streamer" id="streamer" aria-hidden="true"></div>
+<div class="intro-streamers" id="introStreamers" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<main class="wrap" id="app" aria-live="polite"></main>
+
+<script>
+/* ============================================================
+   DATA — edit copy here
+   ============================================================ */
+const PATROLS = {
+  wolves: {
+    name:"Wolves", colour:"var(--wolves)", fg:"light",
+    tagline:"The pack moves together.",
+    traits:["Loyal","Team-first","Calm under pressure"],
+    members:"Bob Wroughton (Patrol Leader), Cedric Curteis, John Evans-Lombe, Percy Medway and Reginald Giles.",
+    fact:"Wolf John Evans-Lombe's older brother Thomas led the Bulls. Patrol rivalry started early."
+  },
+  bulls: {
+    name:"Bulls", colour:"var(--bulls)", fg:"light",
+    tagline:"First to the heavy end.",
+    traits:["Strong","Direct","Dependable"],
+    members:"Thomas Evans-Lombe (Patrol Leader), Arthur Primmer, Bert Blandford, James Rodney and Marc Noble.",
+    fact:"Marc Noble's father quietly paid off the whole camp's £24 deficit afterwards. Very Bulls."
+  },
+  curlews: {
+    name:"Curlews", colour:"var(--curlews)", fg:"dark",
+    tagline:"The call that carries across the harbour.",
+    traits:["Observant","Alert","Clear communicator"],
+    members:"George Rodney (Patrol Leader), Bertie Watts, Alan Vivian, Terry Bonfield, Richard Grant and, the story goes, a secret sixth member: Simon Rodney.",
+    fact:"Curlews still feed on the Poole Harbour mudflats around Brownsea today."
+  },
+  ravens: {
+    name:"Ravens", colour:"var(--ravens)", fg:"light",
+    tagline:"Solves it a different way.",
+    traits:["Curious","Quick-witted","Resourceful"],
+    members:"Herbert Emley (Patrol Leader), Bert Tarrant, William Rodney, Collingbourne and Humphrey Noble.",
+    fact:"Three Rodney brothers were split across three patrols. William flew the red streamer for the Ravens."
+  }
+};
+
+const QUESTIONS = [
+  { theme:"Camp life", weight:2,
+    flavour:"Every day at Brownsea began with a blast on BP's kudu horn.",
+    prompt:"It's 6am on Brownsea Island. The kudu horn sounds across the camp. You are...",
+    options:[
+      {p:"bulls",   t:"First out of the tent, calling the others on"},
+      {p:"curlews", t:"Already awake. You heard the ferry cross the harbour an hour ago"},
+      {p:"wolves",  t:"Up fast and counting your patrol out of the tent. No one gets left behind"},
+      {p:"ravens",  t:"Rigging a quicker way to get the cocoa on"}
+    ]},
+  { theme:"Campaigning", weight:1,
+    flavour:"Day two was camp skills. Each patrol ran its own site and bell tent.",
+    prompt:"Your patrol has an hour to set up camp. Tent up, fire lit, kit stowed. What's your job?",
+    options:[
+      {p:"ravens",  t:"Finding a better way to pitch the tent than the book says"},
+      {p:"bulls",   t:"Hauling the heavy kit and driving the pegs, done before anyone asks"},
+      {p:"curlews", t:"Reading the ground. Level pitch, wind direction, where rain will pool"},
+      {p:"wolves",  t:"Pairing everyone up so every job has a buddy"}
+    ]},
+  { theme:"Observation", weight:1,
+    flavour:"Day three was tracking and deduction, including Kim's Game.",
+    prompt:"Out on a tracking exercise, what do you notice first?",
+    options:[
+      {p:"wolves",  t:"Where every member of your patrol is. Always"},
+      {p:"ravens",  t:"A heel print and broken twigs. You read the whole story"},
+      {p:"bulls",   t:"The quickest safe route through, so you press on"},
+      {p:"curlews", t:"A bird call that suddenly stopped. Something moved out there"}
+    ]},
+  { theme:"Woodcraft", weight:1,
+    flavour:"Day four was nature and stalking. Deerstalking was one of the camp's games.",
+    prompt:"Deerstalking in the woods. The wind shifts and you're close. What's your move?",
+    options:[
+      {p:"curlews", t:"Freeze. Watch. You'll move when it moves"},
+      {p:"bulls",   t:"Slow, steady, straight in. Hold your nerve"},
+      {p:"wolves",  t:"One hand signal and the patrol circles in together"},
+      {p:"ravens",  t:"Drop into the ditch nobody else clocked"}
+    ]},
+  { theme:"Chivalry", weight:1,
+    flavour:"Day five was chivalry. Unselfishness and good turns, straight from BP's yarns.",
+    prompt:"A younger Scout's kit is soaked and they're miserable. Nobody's watching. You...",
+    options:[
+      {p:"wolves",  t:"Bring them to your patrol fire. They're one of yours now"},
+      {p:"curlews", t:"Spotted them struggling at breakfast and quietly sorted it already"},
+      {p:"ravens",  t:"Rig a drying line by the fire and show them how it works"},
+      {p:"bulls",   t:"Hand over your spare jumper on the spot"}
+    ]},
+  { theme:"Saving a life", weight:1,
+    flavour:"Day six was lifesaving. The boys practised throwing a rescue line.",
+    prompt:"Bathing parade. Someone's struggling in the water off the beach. You...",
+    options:[
+      {p:"bulls",   t:"Are in the water before you've finished thinking"},
+      {p:"ravens",  t:"Grab the rescue line and judge the throw"},
+      {p:"wolves",  t:"Link everyone into a rescue line in seconds"},
+      {p:"curlews", t:"Shout clear instructions and signal up the beach for help"}
+    ]},
+  { theme:"Citizenship", weight:1,
+    flavour:"Day seven looked outward. What Scouts do for everyone else.",
+    prompt:"Last campfire. BP asks what you'll do when you get home. You...",
+    options:[
+      {p:"ravens",  t:"Already have ideas to make all this even better"},
+      {p:"wolves",  t:"Keep this patrol together. These are friends for life"},
+      {p:"curlews", t:"Tell everyone what happened here. The story needs carrying"},
+      {p:"bulls",   t:"Start it up in your own town, straight away"}
+    ]}
+];
+
+/* ============================================================
+   STATE + LOGIC
+   ============================================================ */
+let current = 0;
+let answers = [];          // patrol id per question, in order
+let shuffled = [];         // per-round shuffled option lists
+
+const app = document.getElementById("app");
+const streamer = document.getElementById("streamer");
+const introStreamers = document.getElementById("introStreamers");
+
+function shuffle(a){
+  const arr = a.slice();
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function startQuiz(){
+  current = 0;
+  answers = [];
+  shuffled = QUESTIONS.map(q => shuffle(q.options));
+  document.body.className = "";
+  introStreamers.style.display = "none";
+  renderQuestion();
+}
+
+let locked = false;
+function pick(btn, patrol){
+  if(locked) return;
+  locked = true;
+  btn.classList.add("picked");
+  answers[current] = patrol;
+  setTimeout(()=>{
+    locked = false;
+    current++;
+    if(current < QUESTIONS.length){ renderQuestion(); }
+    else { renderResult(); }
+  }, 220);
+}
+
+function goBack(){
+  if(locked) return;
+  if(current === 0){ renderIntro(); return; }
+  current--;
+  answers.length = current;
+  renderQuestion();
+}
+
+function scoreResult(){
+  const totals = {wolves:0,bulls:0,curlews:0,ravens:0};
+  answers.forEach((p,i)=>{ totals[p] += QUESTIONS[i].weight; });
+  const max = Math.max(...Object.values(totals));
+  const tied = Object.keys(totals).filter(p => totals[p] === max);
+  if(tied.length === 1) return tied[0];
+  if(tied.includes(answers[0])) return answers[0];       // instinct question breaks ties
+  for(const p of answers){ if(tied.includes(p)) return p; } // else earliest tied pick
+  return tied[0];
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function renderIntro(){
+  document.body.className = "";
+  streamer.style.height = "0px";
+  introStreamers.style.display = "flex";
+  app.innerHTML = `
+    <div class="screen">
+      <div class="fleur" aria-hidden="true">&#9884;</div>
+      <p class="eyebrow">Gilwell Reunion &middot; UK Pavilion</p>
+      <h1>Which Brownsea patrol are you?</h1>
+      <p class="dek">1 August 1907. Twenty boys, four patrols, one island, and the camp that started it all. Seven questions to find where you'd have pitched your tent.</p>
+      <button class="btn primary" id="startBtn">Sound the kudu horn</button>
+      <p class="smallnote">About 90 seconds. Wolves, Bulls, Curlews and Ravens await.</p>
+    </div>`;
+  document.getElementById("startBtn").addEventListener("click", startQuiz);
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[current];
+  introStreamers.style.display = "none";
+  streamer.style.height = Math.round(((current)/QUESTIONS.length)*42 + 8) + "vh";
+  streamer.style.background = "var(--brass)";
+  app.innerHTML = `
+    <div class="screen">
+      <p class="eyebrow">Question ${current+1} of ${QUESTIONS.length} &middot; ${q.theme}</p>
+      <p class="flavour">${q.flavour}</p>
+      <p class="prompt">${q.prompt}</p>
+      <div id="opts"></div>
+      <button class="backlink" id="backBtn">&larr; ${current===0 ? "Back to start" : "Previous question"}</button>
+    </div>`;
+  const opts = document.getElementById("opts");
+  shuffled[current].forEach(o=>{
+    const b = document.createElement("button");
+    b.className = "btn";
+    b.textContent = o.t;
+    b.addEventListener("click", ()=>pick(b, o.p), {once:true});
+    opts.appendChild(b);
+  });
+  document.getElementById("backBtn").addEventListener("click", goBack);
+}
+
+function renderResult(){
+  const id = scoreResult();
+  const pt = PATROLS[id];
+  document.body.className = "result-mode result-" + id;
+  streamer.style.height = "100vh";
+  streamer.style.background = pt.fg === "dark" ? "var(--ink)" : "rgba(239,231,210,.95)";
+  app.innerHTML = `
+    <div class="screen">
+      <p class="eyebrow">Your patrol, since 1907</p>
+      <div class="patrolname">${pt.name}</div>
+      <p class="tagline">${pt.tagline}</p>
+      <p class="traits">${pt.traits.join(" &middot; ")}</p>
+      <hr class="rule">
+      <div class="roster">
+        <p class="eyebrow">You'd have camped alongside</p>
+        <p>${pt.members}</p>
+        <p class="fact">${pt.fact}</p>
+      </div>
+      <hr class="rule">
+      <div class="cta">
+        <p class="eyebrow">The story continues</p>
+        <p>120 years after four patrols camped on Brownsea Island, the World Scout Jamboree lands in Gda&nacute;sk, 30 July to 8 August 2027. Find the UK Pavilion team at Reunion to be part of it.</p>
+      </div>
+      <button class="btn primary" id="shareBtn">Share my patrol</button>
+      <button class="btn ghost" id="againBtn">Start again</button>
+      <p class="history">The history bit: the real 1907 patrols weren't sorted by personality. BP deliberately mixed ages and backgrounds in every patrol. The traits are ours. The names, the colours and the camp are real.</p>
+    </div>`;
+  document.getElementById("againBtn").addEventListener("click", renderIntro);
+  document.getElementById("shareBtn").addEventListener("click", async (e)=>{
+    const text = "I'm in the " + pt.name + " patrol \u269C 120 years of Scouting since Brownsea. Which patrol are you?";
+    const url = window.location.href;
+    if(navigator.share){
+      try{ await navigator.share({title:"Brownsea Patrol Finder", text:text, url:url}); }catch(_){}
+    } else if(navigator.clipboard){
+      try{
+        await navigator.clipboard.writeText(text + " " + url);
+        e.target.textContent = "Copied to clipboard";
+      }catch(_){ e.target.textContent = text; }
+    }
+  });
+}
+
+renderIntro();
+</script>
+</body>
+</html>
