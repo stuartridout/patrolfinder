@@ -4,8 +4,9 @@
   "description": "The API behind wsjpatrol.com: patrol tally, sign-ups and the patrol log.",
   "main": "src/functions/*.js",
   "private": true,
-  "engines": { "node": ">=20" },
-  "_note": "Deployed on Azure Functions Node 24; Node 20 went end-of-life 2026-04-30.",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@azure/functions": "^4.5.1",
     "@azure/data-tables": "^13.2.2",

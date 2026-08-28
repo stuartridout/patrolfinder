@@ -25,6 +25,8 @@ Run this from your own machine. The MK Scouts tenant's Conditional Access
 blocks device-code sign-in, so it will not work from a container or a remote
 shell however many times you try the code.
 
+Needs `az`, `zip` and `npm` (`brew install azure-cli node`).
+
 ```sh
 az login
 az account set --subscription cb97a694-e8c5-4332-b326-70fa7cc02420
@@ -44,6 +46,23 @@ Then put the printed URL into `API_BASE` at the top of the script in
 `index.html`, with no trailing slash, and push to `main`.
 
 Later code changes: `./deploy.sh --code-only`.
+
+### How the code gets there
+
+Run-from-package: `npm install` runs locally, the whole thing is zipped with
+its `node_modules`, uploaded to a `deployments` container in the storage
+account, and `WEBSITE_RUN_FROM_PACKAGE` is pointed at a read-only SAS link to
+that blob. The app mounts it read-only and restarts.
+
+The obvious-looking alternative, `az functionapp deployment source config-zip
+--build-remote`, does not work here. A Linux Consumption app has only a stub of
+a Kudu/SCM site, so the server-side npm install has nothing to run on: the
+deployment endpoint answers 503 indefinitely, and the CLI itself crashes with a
+JSONDecodeError when it tries to read app settings back from SCM and gets an
+HTML error page. Run-from-package never touches SCM.
+
+Old packages stay in the container. Delete them when you like; the app only
+ever reads the one the setting points at.
 
 Overridable with environment variables: `RG`, `LOCATION`, `APP`, `STORAGE`,
 `REUNION_ENDS`, `ALLOWED_ORIGIN`, `ADMIN_TOKEN`.

@@ -40,6 +40,7 @@ say(){ printf '\n\033[1;34m==>\033[0m %s\n' "$1"; }
 
 command -v az  >/dev/null || { echo "az CLI not found. https://aka.ms/azcli" >&2; exit 1; }
 command -v zip >/dev/null || { echo "zip not found." >&2; exit 1; }
+command -v npm >/dev/null || { echo "npm not found. brew install node" >&2; exit 1; }
 
 SUB_NAME=$(az account show --query name -o tsv)
 SUB_ID=$(az account show --query id -o tsv)
@@ -105,46 +106,61 @@ if [ "$CODE_ONLY" -eq 0 ]; then
     "ADMIN_TOKEN=$ADMIN_TOKEN" \
     "REUNION_ENDS=$REUNION_ENDS" \
     "ALLOWED_ORIGIN=$ALLOWED_ORIGIN" \
-    "SCM_DO_BUILD_DURING_DEPLOYMENT=true" \
-    "ENABLE_ORYX_BUILD=true" \
     --output none
 fi
+
+say "Installing dependencies"
+# Shipped in the zip rather than built server-side. A Linux Consumption app has
+# only a stub of a Kudu site, so the remote-build path (config-zip
+# --build-remote) has nothing to build on and answers 503 forever.
+npm install --omit=dev --no-audit --no-fund --silent
 
 say "Packaging"
 TMPDIR_=$(mktemp -d)
 ZIP="$TMPDIR_/app.zip"
-# node_modules is left out on purpose: Oryx installs it server-side from
-# package.json, so the upload stays small and the platform picks the right
-# native builds.
-zip -qr "$ZIP" host.json package.json src -x '*/node_modules/*'
+zip -qr "$ZIP" host.json package.json node_modules src
 
-say "Deploying (the server-side npm install takes a minute or two)"
-# A newly created consumption app often has no warm SCM site yet and the push
-# comes back 503. That is a wait, not a failure.
-deployed=0
-for attempt in 1 2 3 4 5; do
-  if az functionapp deployment source config-zip \
-       --name "$APP" --resource-group "$RG" --src "$ZIP" --build-remote true --output none; then
-    deployed=1
-    break
-  fi
-  echo "  attempt $attempt did not take, waiting 45s for the deployment endpoint"
-  sleep 45
-done
+say "Uploading the package"
+# Run-from-package: the app mounts a zip out of blob storage read-only. This is
+# the deployment path Linux Consumption actually supports, and it never touches
+# the SCM site.
+KEY=$(az storage account keys list --account-name "$STORAGE" --resource-group "$RG" --query "[0].value" -o tsv)
+az storage container create --name deployments \
+  --account-name "$STORAGE" --account-key "$KEY" --output none
+BLOB="app-$(date -u +%Y%m%d%H%M%S).zip"
+az storage blob upload --file "$ZIP" --name "$BLOB" --container-name deployments \
+  --account-name "$STORAGE" --account-key "$KEY" --overwrite --output none
 rm -rf "$TMPDIR_"
-[ "$deployed" = "1" ] || { echo "Could not upload the code. Re-run: ./deploy.sh --code-only" >&2; exit 1; }
+
+# Long-lived read-only link, and BSD and GNU date disagree about how to say it.
+EXPIRY=$(date -u -v+2y '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -d '+2 years' '+%Y-%m-%dT%H:%MZ')
+PKG_URL=$(az storage blob generate-sas --name "$BLOB" --container-name deployments \
+  --account-name "$STORAGE" --account-key "$KEY" \
+  --permissions r --expiry "$EXPIRY" --https-only --full-uri -o tsv)
+
+say "Pointing the app at it"
+# Nothing is built on the way in any more, so this setting must not linger.
+az functionapp config appsettings delete --name "$APP" --resource-group "$RG" \
+  --setting-names SCM_DO_BUILD_DURING_DEPLOYMENT --output none 2>/dev/null || true
+az functionapp config appsettings set --name "$APP" --resource-group "$RG" \
+  --settings "WEBSITE_RUN_FROM_PACKAGE=$PKG_URL" --output none
+
+say "Restarting"
+az functionapp restart --name "$APP" --resource-group "$RG" --output none
 
 HOST=$(az functionapp show --name "$APP" --resource-group "$RG" --query defaultHostName -o tsv)
 
 say "Checking it answers"
-for i in 1 2 3 4 5 6 7 8 9 10; do
+up=0
+for i in $(seq 1 24); do
   if curl -fsS "https://$HOST/config" >/dev/null 2>&1; then
-    echo "  up"
+    echo "  up after $((i * 15))s"
+    up=1
     break
   fi
-  [ "$i" = "10" ] && echo "  no answer yet - cold start can take a while, try the URL below in a minute"
   sleep 15
 done
+[ "$up" = "1" ] || echo "  still quiet after six minutes - check the URL below, and the app's Log stream in the portal"
 
 cat <<DONE
 
