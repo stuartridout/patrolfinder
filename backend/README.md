@@ -47,6 +47,18 @@ Then put the printed URL into `API_BASE` at the top of the script in
 
 Later code changes: `./deploy.sh --code-only`.
 
+### Which plan
+
+`./deploy.sh` uses classic Linux Consumption. `./deploy.sh --flex` uses **Flex
+Consumption**, which is what Microsoft now recommends and what you probably
+want: classic Linux Consumption reaches end of life in 2028, its Kudu site is a
+stub that breaks the normal deployment paths, and its cold starts are worse,
+which shows when someone is tapping through a quiz at a stand.
+
+A plan cannot be changed under an existing app, so `--flex` creates a
+separate one (`wsjpatrol-fn` by default) alongside. Delete the old app once the
+new one answers.
+
 ### How the code gets there
 
 Run-from-package: `npm install` runs locally, the whole thing is zipped with

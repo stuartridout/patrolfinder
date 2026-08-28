@@ -5,6 +5,7 @@
 #   ./deploy.sh                  first run: creates everything, then ships the code
 #   ./deploy.sh --code-only      later runs: just ship the code
 #   ./deploy.sh --yes            skip the confirmation prompt
+#   ./deploy.sh --flex           host on Flex Consumption instead (see below)
 #
 # Creates, in one new resource group and nothing else:
 #   - a Storage Account (the Function App needs one anyway; the tally,
@@ -19,9 +20,22 @@
 # container: device-code sign-in is commonly blocked outright.
 set -euo pipefail
 
+# Flex Consumption is the plan Microsoft now recommends: classic Linux
+# Consumption reaches end of life in 2028, its Kudu site is a stub that breaks
+# every normal deployment path, and its cold starts are worse - which shows at a
+# stand where people are tapping through a quiz. Flex takes the package through
+# a proper deployment container instead of Kudu.
+FLEX=0
+for a in "$@"; do [ "$a" = "--flex" ] && FLEX=1; done
+
 RG="${RG:-rg-wsjpatrol}"
 LOCATION="${LOCATION:-uksouth}"
-APP="${APP:-wsjpatrol-api}"
+if [ "$FLEX" = "1" ]; then
+  # A plan cannot be changed under an existing app, so Flex needs its own name.
+  APP="${APP:-wsjpatrol-fn}"
+else
+  APP="${APP:-wsjpatrol-api}"
+fi
 STORAGE="${STORAGE:-stwsjpatrol}"
 REUNION_ENDS="${REUNION_ENDS:-2026-09-06}"
 ALLOWED_ORIGIN="${ALLOWED_ORIGIN:-https://wsjpatrol.com,https://www.wsjpatrol.com,https://stuartridout.github.io}"
@@ -32,6 +46,7 @@ for arg in "$@"; do
   case "$arg" in
     --code-only) CODE_ONLY=1 ;;
     --yes|-y)    ASSUME_YES=1 ;;
+    --flex)      ;;                 # already read above
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -52,6 +67,7 @@ cat <<BANNER
   Resource group $RG   (created if missing)
   Location       $LOCATION
   Function app   $APP
+  Plan           $([ "$FLEX" = "1" ] && echo "Flex Consumption" || echo "Linux Consumption")
   Storage        $STORAGE
   Reunion ends   $REUNION_ENDS   (photos deleted seven days later)
 
@@ -84,13 +100,31 @@ if [ "$CODE_ONLY" -eq 0 ]; then
     --allow-blob-public-access false --min-tls-version TLS1_2 \
     --output none
 
-  say "Function app $APP (Linux consumption, Node 24)"
-  az functionapp create \
-    --name "$APP" --resource-group "$RG" --storage-account "$STORAGE" \
-    --consumption-plan-location "$LOCATION" \
-    --runtime node --runtime-version 24 --functions-version 4 \
-    --os-type Linux --disable-app-insights true \
-    --output none
+  if [ "$FLEX" = "1" ]; then
+    say "Function app $APP (Flex Consumption, Node 22)"
+    az functionapp create \
+      --name "$APP" --resource-group "$RG" --storage-account "$STORAGE" \
+      --flexconsumption-location "$LOCATION" \
+      --runtime node --runtime-version 22 \
+      --instance-memory 2048 \
+      --output none
+  else
+    say "Function app $APP (Linux Consumption, Node 24)"
+    az functionapp create \
+      --name "$APP" --resource-group "$RG" --storage-account "$STORAGE" \
+      --consumption-plan-location "$LOCATION" \
+      --runtime node --runtime-version 24 --functions-version 4 \
+      --os-type Linux \
+      --output none
+  fi
+
+  # Telemetry is how you find out why a host will not start. Leaving it off to
+  # keep the resource count down cost an evening the first time round.
+  say "Application Insights"
+  AI_CONN=$(az monitor app-insights component create --app "$APP" --resource-group "$RG" \
+    --location "$LOCATION" --application-type web --query connectionString -o tsv 2>/dev/null || true)
+  [ -n "${AI_CONN:-}" ] && az functionapp config appsettings set --name "$APP" --resource-group "$RG" \
+    --settings "APPLICATIONINSIGHTS_CONNECTION_STRING=$AI_CONN" --output none
 
   # A long random token. Printed once, below, and after that only readable by
   # someone with Azure access to the app's settings.
@@ -120,49 +154,55 @@ TMPDIR_=$(mktemp -d)
 ZIP="$TMPDIR_/app.zip"
 zip -qr "$ZIP" host.json package.json node_modules src
 
-say "Uploading the package"
-# Run-from-package: the app mounts a zip out of blob storage read-only. This is
-# the deployment path Linux Consumption actually supports, and it never touches
-# the SCM site.
-KEY=$(az storage account keys list --account-name "$STORAGE" --resource-group "$RG" --query "[0].value" -o tsv)
-az storage container create --name deployments \
-  --account-name "$STORAGE" --account-key "$KEY" --output none
-BLOB="app-$(date -u +%Y%m%d%H%M%S).zip"
-az storage blob upload --file "$ZIP" --name "$BLOB" --container-name deployments \
-  --account-name "$STORAGE" --account-key "$KEY" --overwrite --output none
-rm -rf "$TMPDIR_"
+if [ "$FLEX" = "1" ]; then
+  # Flex takes the package through its own deployment container and registers
+  # the triggers itself. No SAS URL, no app setting, no manual sync.
+  say "Deploying"
+  az functionapp deployment source config-zip \
+    --name "$APP" --resource-group "$RG" --src "$ZIP" --output none
+  rm -rf "$TMPDIR_"
+else
+  say "Uploading the package"
+  # Run-from-package: the app mounts a zip out of blob storage read-only. On
+  # classic Consumption this is the only path that does not go through the stub
+  # Kudu site, which answers 503 forever.
+  KEY=$(az storage account keys list --account-name "$STORAGE" --resource-group "$RG" --query "[0].value" -o tsv)
+  az storage container create --name deployments \
+    --account-name "$STORAGE" --account-key "$KEY" --output none
+  BLOB="app-$(date -u +%Y%m%d%H%M%S).zip"
+  az storage blob upload --file "$ZIP" --name "$BLOB" --container-name deployments \
+    --account-name "$STORAGE" --account-key "$KEY" --overwrite --output none
+  rm -rf "$TMPDIR_"
 
-# Long-lived read-only link, and BSD and GNU date disagree about how to say it.
-EXPIRY=$(date -u -v+2y '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -d '+2 years' '+%Y-%m-%dT%H:%MZ')
-PKG_URL=$(az storage blob generate-sas --name "$BLOB" --container-name deployments \
-  --account-name "$STORAGE" --account-key "$KEY" \
-  --permissions r --expiry "$EXPIRY" --https-only --full-uri -o tsv)
+  # Long-lived read-only link, and BSD and GNU date disagree about how to say it.
+  EXPIRY=$(date -u -v+2y '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -d '+2 years' '+%Y-%m-%dT%H:%MZ')
+  PKG_URL=$(az storage blob generate-sas --name "$BLOB" --container-name deployments \
+    --account-name "$STORAGE" --account-key "$KEY" \
+    --permissions r --expiry "$EXPIRY" --https-only --full-uri -o tsv)
 
-say "Pointing the app at it"
-# Nothing is built on the way in any more, so this setting must not linger.
-az functionapp config appsettings delete --name "$APP" --resource-group "$RG" \
-  --setting-names SCM_DO_BUILD_DURING_DEPLOYMENT --output none 2>/dev/null || true
-az functionapp config appsettings set --name "$APP" --resource-group "$RG" \
-  --settings "WEBSITE_RUN_FROM_PACKAGE=$PKG_URL" --output none
+  say "Pointing the app at it"
+  az functionapp config appsettings delete --name "$APP" --resource-group "$RG" \
+    --setting-names SCM_DO_BUILD_DURING_DEPLOYMENT --output none 2>/dev/null || true
+  az functionapp config appsettings set --name "$APP" --resource-group "$RG" \
+    --settings "WEBSITE_RUN_FROM_PACKAGE=$PKG_URL" --output none
 
-say "Restarting"
-az functionapp restart --name "$APP" --resource-group "$RG" --output none
-sleep 15
+  say "Restarting"
+  az functionapp restart --name "$APP" --resource-group "$RG" --output none
+  sleep 15
 
-say "Syncing triggers"
-# Setting WEBSITE_RUN_FROM_PACKAGE by hand does not tell the platform what
-# triggers the package contains. config-zip would have done this for us. Without
-# it the scale controller has nothing to start, function list answers Bad
-# Request, and every request to the app comes back 503 forever.
-SYNC_URI="https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.Web/sites/$APP/syncfunctiontriggers?api-version=2022-03-01"
-for attempt in 1 2 3 4; do
-  if az rest --method post --uri "$SYNC_URI" --output none 2>/dev/null; then
-    echo "  triggers synced"
-    break
-  fi
-  echo "  sync attempt $attempt did not take, waiting 20s"
-  sleep 20
-done
+  say "Syncing triggers"
+  # Setting WEBSITE_RUN_FROM_PACKAGE by hand does not tell the platform what
+  # triggers the package contains, so the scale controller has nothing to start.
+  SYNC_URI="https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.Web/sites/$APP/syncfunctiontriggers?api-version=2022-03-01"
+  for attempt in 1 2 3 4; do
+    if az rest --method post --uri "$SYNC_URI" --output none 2>/dev/null; then
+      echo "  triggers synced"
+      break
+    fi
+    echo "  sync attempt $attempt did not take, waiting 20s"
+    sleep 20
+  done
+fi
 
 HOST=$(az functionapp show --name "$APP" --resource-group "$RG" --query defaultHostName -o tsv)
 
