@@ -95,6 +95,11 @@ if [ "$CODE_ONLY" -eq 0 ]; then
   # someone with Azure access to the app's settings.
   ADMIN_TOKEN="${ADMIN_TOKEN:-$(head -c 32 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | cut -c1-40)}"
 
+  # A brand new app answers plain HTTP as well as HTTPS. The admin token
+  # travels on these requests, so redirect everything.
+  say "HTTPS only"
+  az functionapp update --name "$APP" --resource-group "$RG" --set httpsOnly=true --output none
+
   say "App settings"
   az functionapp config appsettings set --name "$APP" --resource-group "$RG" --settings \
     "ADMIN_TOKEN=$ADMIN_TOKEN" \
@@ -114,9 +119,20 @@ ZIP="$TMPDIR_/app.zip"
 zip -qr "$ZIP" host.json package.json src -x '*/node_modules/*'
 
 say "Deploying (the server-side npm install takes a minute or two)"
-az functionapp deployment source config-zip \
-  --name "$APP" --resource-group "$RG" --src "$ZIP" --build-remote true --output none
+# A newly created consumption app often has no warm SCM site yet and the push
+# comes back 503. That is a wait, not a failure.
+deployed=0
+for attempt in 1 2 3 4 5; do
+  if az functionapp deployment source config-zip \
+       --name "$APP" --resource-group "$RG" --src "$ZIP" --build-remote true --output none; then
+    deployed=1
+    break
+  fi
+  echo "  attempt $attempt did not take, waiting 45s for the deployment endpoint"
+  sleep 45
+done
 rm -rf "$TMPDIR_"
+[ "$deployed" = "1" ] || { echo "Could not upload the code. Re-run: ./deploy.sh --code-only" >&2; exit 1; }
 
 HOST=$(az functionapp show --name "$APP" --resource-group "$RG" --query defaultHostName -o tsv)
 
