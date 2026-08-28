@@ -21,12 +21,20 @@ there is no public blob URL to leak past them.
 
 ## Deploy
 
+Run this from your own machine. The MK Scouts tenant's Conditional Access
+blocks device-code sign-in, so it will not work from a container or a remote
+shell however many times you try the code.
+
 ```sh
 az login
-az account set --subscription "<the MK Scouts subscription>"
+az account set --subscription cb97a694-e8c5-4332-b326-70fa7cc02420
 cd backend
 ./deploy.sh
 ```
+
+It shows you what it is about to create and waits for a yes. Everything lands
+in one new resource group; nothing outside it is touched and nothing is
+deleted. `--yes` skips the prompt.
 
 It prints an **admin token** once. Save it — it is the only way into the
 console, and it is not shown again. (`az functionapp config appsettings list`
