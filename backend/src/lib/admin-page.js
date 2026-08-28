@@ -95,7 +95,7 @@ const ADMIN_HTML = `<!DOCTYPE html>
     <h2>Sign in</h2>
     <p class="hint">Paste the admin token. It is kept in this browser only.</p>
     <div class="row" style="flex-wrap:nowrap">
-      <input type="password" id="token" placeholder="Admin token" autocomplete="current-password" aria-label="Admin token">
+      <input type="password" id="token" placeholder="Admin token" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" aria-label="Admin token">
     </div>
     <label class="row" style="gap:8px;font-size:.85rem;font-weight:700">
       <input type="checkbox" id="remember" style="width:20px;height:20px" checked> Stay signed in on this device
@@ -200,14 +200,24 @@ function saveToken(t, remember){
 
 function signOut(){
   TOKEN = "";
-  try{ sessionStorage.removeItem("pf.token"); localStorage.removeItem("pf.token"); }catch(e){}
+  forgetToken();
   location.reload();
+}
+
+function forgetToken(){
+  try{ sessionStorage.removeItem("pf.token"); localStorage.removeItem("pf.token"); }catch(e){}
 }
 
 async function tryToken(t, remember){
   TOKEN = t;
   var res = await api("/console/config");
-  if(res.status === 401) return false;
+  if(res.status === 401){
+    /* A token that has been rotated away is dead for good. Drop it rather than
+       retrying it on every reload and leaving the field autofilled with it. */
+    forgetToken();
+    TOKEN = "";
+    return false;
+  }
   if(!res.ok) throw new Error("server said " + res.status);
   saveToken(t, remember);
   var flags = await res.json();
@@ -454,7 +464,10 @@ $("purgeBtn").addEventListener("click", async function(){
 (function boot(){
   var saved = "";
   try{ saved = localStorage.getItem("pf.token") || sessionStorage.getItem("pf.token") || ""; }catch(e){}
-  if(saved) tryToken(saved, true).catch(function(){});
+  if(!saved) return;
+  tryToken(saved, true).then(function(ok){
+    if(!ok) note($("signinNote"), "The saved token no longer works. It has been forgotten - paste the current one.", "err");
+  }).catch(function(){});
 })();
 </script>
 </body>
