@@ -45,7 +45,7 @@ See `backend/README.md` to deploy it: `az login`, pick the subscription, `./depl
 
 ## Switching things off, mid-event
 
-The Jamboree Team's console lives at `<api>/admin`, behind a token. Four
+The Jamboree Team's console lives at `<api>/console`, behind a token. Four
 switches, each taking effect on the next page load for everyone:
 
 - **Patrol wall** — hides the wall everywhere and stops serving the pictures

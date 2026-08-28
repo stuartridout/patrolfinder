@@ -204,7 +204,14 @@ else
   done
 fi
 
-HOST=$(az functionapp show --name "$APP" --resource-group "$RG" --query defaultHostName -o tsv)
+HOST=$(az functionapp show --name "$APP" --resource-group "$RG" --query defaultHostName -o tsv 2>/dev/null || true)
+if [ -z "$HOST" ]; then
+  # az functionapp show returns no host fields at all for a Flex app. The raw
+  # resource does, so ask ARM directly rather than printing "https://".
+  HOST=$(az resource show \
+    --ids "/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.Web/sites/$APP" \
+    --query properties.defaultHostName -o tsv)
+fi
 
 say "Checking it answers"
 up=0
@@ -223,7 +230,7 @@ cat <<DONE
 Deployed.
 
   API           https://$HOST
-  Console       https://$HOST/admin
+  Console       https://$HOST/console
   Health check  curl https://$HOST/config
 
 Put this in index.html and push to main:

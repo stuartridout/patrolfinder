@@ -1,5 +1,5 @@
 /*
- * The Jamboree Team's console, served from the API itself at /admin.
+ * The Jamboree Team's console, served from the API itself at /console.
  *
  * It is one page with no build step and no framework, because it has to work
  * on a volunteer's phone, on event wifi, with someone else's hands. The token
@@ -206,7 +206,7 @@ function signOut(){
 
 async function tryToken(t, remember){
   TOKEN = t;
-  var res = await api("/admin/config");
+  var res = await api("/console/config");
   if(res.status === 401) return false;
   if(!res.ok) throw new Error("server said " + res.status);
   saveToken(t, remember);
@@ -248,7 +248,7 @@ document.querySelectorAll("[data-flag]").forEach(function(box){
     patch[box.dataset.flag] = box.checked;
     box.disabled = true;
     try{
-      var res = await api("/admin/config", {
+      var res = await api("/console/config", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(patch)
@@ -303,11 +303,11 @@ function figureFor(p, flagged){
   var row = document.createElement("div");
   row.className = "row";
   if(p.status !== "approved"){
-    row.appendChild(actionBtn("Put back", "primary", "/admin/approve", p.id));
+    row.appendChild(actionBtn("Put back", "primary", "/console/approve", p.id));
   }else{
-    row.appendChild(actionBtn("Take down", "quiet", "/admin/hide", p.id));
+    row.appendChild(actionBtn("Take down", "quiet", "/console/hide", p.id));
   }
-  row.appendChild(actionBtn("Delete", "danger", "/admin/delete", p.id));
+  row.appendChild(actionBtn("Delete", "danger", "/console/delete", p.id));
   cap.appendChild(row);
   f.appendChild(img); f.appendChild(cap);
   return f;
@@ -318,7 +318,7 @@ function actionBtn(label, cls, path, id){
   b.className = cls;
   b.textContent = label;
   b.addEventListener("click", async function(){
-    if(path === "/admin/delete" && !confirm("Delete this card for good?")) return;
+    if(path === "/console/delete" && !confirm("Delete this card for good?")) return;
     b.disabled = true;
     try{
       var res = await api(path, {
@@ -401,7 +401,7 @@ function paintStats(s){
 async function refresh(){
   paintFilters();
   try{
-    var [statsRes, photoRes] = await Promise.all([api("/admin/stats"), api("/admin/photos")]);
+    var [statsRes, photoRes] = await Promise.all([api("/console/stats"), api("/console/photos")]);
     if(statsRes.ok) paintStats(await statsRes.json());
     if(photoRes.ok){
       allPhotos = (await photoRes.json()).items || [];
@@ -417,7 +417,7 @@ $("refreshBtn").addEventListener("click", refresh);
 $("csvBtn").addEventListener("click", async function(){
   this.disabled = true;
   try{
-    var res = await api("/admin/signups.csv");
+    var res = await api("/console/signups.csv");
     var blob = await res.blob();
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -438,7 +438,7 @@ $("purgeBtn").addEventListener("click", async function(){
   if(!confirm("Delete every photo in the patrol log? This cannot be undone.")) return;
   this.disabled = true;
   try{
-    var res = await api("/admin/purge", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
+    var res = await api("/console/purge", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
     var data = await res.json();
     note($("purgeNote"), "Deleted " + (data.deleted || 0) + " photo(s).", "ok");
     $("purgeConfirm").value = "";

@@ -13,16 +13,19 @@
  *   POST /report    {id} -> pulls a card off the wall for the team to look at
  *
  * The team, behind ADMIN_TOKEN
- *   GET  /admin              the console, served from here
- *   GET  /admin/config       POST to change a switch
- *   GET  /admin/photos       every card and its status
- *   GET  /admin/photo/:id    bytes for a card that is not on the wall
- *   POST /admin/approve      {id} put it back up
- *   POST /admin/hide         {id} take it down, keep the file
- *   POST /admin/delete       {id} gone, file and all
- *   GET  /admin/stats        counts and sign-up total
- *   GET  /admin/signups.csv  the sign-up list
- *   POST /admin/purge        delete every photo now
+ *   GET  /console              the console, served from here
+ *   GET  /console/config       POST to change a switch
+ *   GET  /console/photos       every card and its status
+ *   GET  /console/photo/:id    bytes for a card that is not on the wall
+ *   POST /console/approve      {id} put it back up
+ *   POST /console/hide         {id} take it down, keep the file
+ *   POST /console/delete       {id} gone, file and all
+ *   GET  /console/stats        counts and sign-up total
+ *   GET  /console/signups.csv  the sign-up list
+ *   POST /console/purge        delete every photo now
+ *
+ * Not /admin: the Functions host reserves /admin/* for its own API, so a
+ * request there is answered with a 404 before it ever reaches this function.
  *
  * Reunion is a private event, so cards go up as soon as they are uploaded.
  * Two things still hold, and both live here rather than in a policy document:
@@ -217,33 +220,33 @@ async function handler(request, context){
   }
 
   /* ---------------- the team's console ---------------- */
-  if(path === "/admin" && request.method === "GET"){
+  if(path === "/console" && request.method === "GET"){
     return raw(ADMIN_HTML, {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store"});
   }
 
-  if(path.startsWith("/admin/")){
+  if(path.startsWith("/console/")){
     if(!isAdmin(request)) return json({error: "no"}, 401);
 
-    if(path === "/admin/config" && request.method === "GET") return json(await store.readFlags());
+    if(path === "/console/config" && request.method === "GET") return json(await store.readFlags());
 
-    if(path === "/admin/config" && request.method === "POST"){
+    if(path === "/console/config" && request.method === "POST"){
       const body = await request.json().catch(() => ({}));
       const patch = {};
       for(const key of Object.keys(store.FLAG_DEFAULTS)) if(key in body) patch[key] = !!body[key];
       return json(await store.writeFlags(patch));
     }
 
-    if(path === "/admin/photos" && request.method === "GET"){
+    if(path === "/console/photos" && request.method === "GET"){
       const rows = await store.listPhotos();
       /* Anything reported floats to the top: it is off the wall and waiting. */
       rows.sort((a, b) => (b.status === "reported") - (a.status === "reported") || b.created - a.created);
       return json({items: rows.map(r => Object.assign({}, r, {
-        url: new URL("/admin/photo/" + r.id, url.origin).toString()
+        url: new URL("/console/photo/" + r.id, url.origin).toString()
       }))});
     }
 
-    if(path.startsWith("/admin/photo/") && request.method === "GET"){
-      const id = path.slice("/admin/photo/".length);
+    if(path.startsWith("/console/photo/") && request.method === "GET"){
+      const id = path.slice("/console/photo/".length);
       if(!/^[0-9a-f]{32}$/.test(id)) return gone();
       const row = await store.getPhotoRow(id);
       const body = row ? await store.getPhotoBytes(id) : null;
@@ -251,7 +254,7 @@ async function handler(request, context){
       return raw(body, {"Content-Type": row.type || "image/jpeg", "Cache-Control": "no-store"});
     }
 
-    if(path === "/admin/stats" && request.method === "GET"){
+    if(path === "/console/stats" && request.method === "GET"){
       const [tally, signups, rows] = await Promise.all([
         store.readTally(), store.listSignups(), store.listPhotos()
       ]);
@@ -263,7 +266,7 @@ async function handler(request, context){
       });
     }
 
-    if(path === "/admin/signups.csv" && request.method === "GET"){
+    if(path === "/console/signups.csv" && request.method === "GET"){
       const rows = await store.listSignups();
       const csv = ["email,patrol,signed_up"].concat(rows.map(r =>
         [r.email, r.patrol || "", new Date(r.created).toISOString()].join(",")
@@ -275,7 +278,7 @@ async function handler(request, context){
       const body = await request.json().catch(() => ({}));
       const id = String(body.id || "");
 
-      if(path === "/admin/approve" || path === "/admin/hide"){
+      if(path === "/console/approve" || path === "/console/hide"){
         if(!/^[0-9a-f]{32}$/.test(id)) return json({error: "bad id"}, 400);
         /* hide keeps the file, so a card taken down by mistake goes back up. */
         const status = path.endsWith("approve") ? "approved" : "hidden";
@@ -283,13 +286,13 @@ async function handler(request, context){
         return json({ok: true, status: status});
       }
 
-      if(path === "/admin/delete"){
+      if(path === "/console/delete"){
         if(!/^[0-9a-f]{32}$/.test(id)) return json({error: "bad id"}, 400);
         await store.deletePhoto(id);
         return json({ok: true});
       }
 
-      if(path === "/admin/purge"){
+      if(path === "/console/purge"){
         const n = await store.purgeAllPhotos();
         return json({ok: true, deleted: n});
       }

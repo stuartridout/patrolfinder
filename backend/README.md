@@ -92,7 +92,7 @@ telling people something the server will not do.
 
 ## The console
 
-`https://<app>.azurewebsites.net/admin`, served by the API itself. Paste the
+`https://<app>.azurewebsites.net/console`, served by the API itself. Paste the
 admin token once and the browser remembers it. It works on a phone, which is
 where it will actually be used.
 
@@ -134,18 +134,20 @@ Public:
 | GET | `/photo/:id` | image bytes |
 | POST | `/report` | `{id}` — pulls a card off the wall |
 
-Behind `Authorization: Bearer <ADMIN_TOKEN>`:
+Behind `Authorization: Bearer <ADMIN_TOKEN>`. Note `/console`, not `/admin`:
+the Functions host reserves `/admin/*` for its own API and answers 404 there
+before a request reaches the app.
 
 | Method | Path | |
 |---|---|---|
-| GET | `/admin` | the console (no token needed to load the page itself) |
-| GET/POST | `/admin/config` | read or change the switches |
-| GET | `/admin/photos` | every card and its status |
-| GET | `/admin/photo/:id` | bytes for a card that is not on the wall |
-| POST | `/admin/approve` `/admin/hide` `/admin/delete` | `{id}` |
-| GET | `/admin/stats` | counts and sign-up total |
-| GET | `/admin/signups.csv` | the sign-up list |
-| POST | `/admin/purge` | delete every photo now |
+| GET | `/console` | the console (no token needed to load the page itself) |
+| GET/POST | `/console/config` | read or change the switches |
+| GET | `/console/photos` | every card and its status |
+| GET | `/console/photo/:id` | bytes for a card that is not on the wall |
+| POST | `/console/approve` `/console/hide` `/console/delete` | `{id}` |
+| GET | `/console/stats` | counts and sign-up total |
+| GET | `/console/signups.csv` | the sign-up list |
+| POST | `/console/purge` | delete every photo now |
 
 ## Deletion
 
