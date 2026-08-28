@@ -10,7 +10,9 @@
 # Creates, in one new resource group and nothing else:
 #   - a Storage Account (the Function App needs one anyway; the tally,
 #     sign-ups, photo metadata and the image blobs all live in it)
-#   - a Linux Consumption Function App on Node 24
+#   - a Function App: Flex Consumption on Node 22 with --flex (what the live
+#     one is, and what you want), or classic Linux Consumption on Node 24
+#     without it (which never booted here - see backend/README.md)
 #
 # At this scale the Function App sits inside the free monthly grant and the
 # storage account costs pennies. Nothing here needs a paid tier.

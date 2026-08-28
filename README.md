@@ -62,7 +62,24 @@ accidentally hides a feature.
 
 ## DNS
 
-`wsjpatrol.com` points at GitHub Pages: four `A` records for the apex (`185.199.108.153`, `.109.153`, `.110.153`, `.111.153`), or `ALIAS`/`ANAME` to `stuartridout.github.io`, plus a `CNAME` on `www`. Set the custom domain in the repo's Pages settings and turn on Enforce HTTPS once the certificate is issued.
+`wsjpatrol.com` points at GitHub Pages, on GoDaddy nameservers:
+
+| Type | Name | Value |
+|---|---|---|
+| A | `@` | `185.199.108.153`, `.109.153`, `.110.153`, `.111.153` (all four) |
+| CNAME | `www` | `stuartridout.github.io` |
+
+The `www` record has to point at the Pages host, **not** at your own apex.
+GitHub issues one certificate covering both names, and **Enforce HTTPS stays
+unavailable until both are issued** — the checkbox reverts with a red cross. A
+`www` CNAME chained to the apex leaves the apex certificate fine and the `www`
+one never issued, so `https://www.wsjpatrol.com` fails TLS while the apex works.
+That is the symptom to recognise.
+
+Also check there is no `CAA` record blocking Let's Encrypt. Set the custom
+domain in the repo's Pages settings; if it stays stuck for hours, remove and
+re-add it there to retrigger issuance, then re-run the Publish workflow, since
+removing the domain deletes `CNAME` from `gh-pages`.
 
 ## Before shipping visual changes
 

@@ -3,9 +3,13 @@
 The API behind [wsjpatrol.com](https://wsjpatrol.com): the patrol tally, email
 sign-ups, the patrol log, and the console the Jamboree Team runs it from.
 
-One Azure Function App on the Consumption plan (Linux, Node 24), plus the
-storage account it needs anyway. At event scale it sits inside the free monthly execution grant
-and the storage costs pennies a month.
+One Azure Function App on **Flex Consumption** (Node 22), plus the storage
+account it needs anyway. At event scale it sits inside the free monthly
+execution grant and the storage costs pennies a month.
+
+Live at `wsjpatrol-fn.azurewebsites.net`, in resource group `rg-wsjpatrol`,
+subscription "Azure subscription 1" (`cb97a694-e8c5-4332-b326-70fa7cc02420`)
+in the MK Scouts tenant.
 
 ## What it stores
 
@@ -31,8 +35,12 @@ Needs `az`, `zip` and `npm` (`brew install azure-cli node`).
 az login
 az account set --subscription cb97a694-e8c5-4332-b326-70fa7cc02420
 cd backend
-./deploy.sh
+./deploy.sh --flex
 ```
+
+**Always pass `--flex`.** Without it the script builds a classic Linux
+Consumption app, which is what the live one is not, and which does not work
+here at all: see below.
 
 It shows you what it is about to create and waits for a yes. Everything lands
 in one new resource group; nothing outside it is touched and nothing is
@@ -45,43 +53,30 @@ can read it back if you have Azure access.)
 Then put the printed URL into `API_BASE` at the top of the script in
 `index.html`, with no trailing slash, and push to `main`.
 
-Later code changes: `./deploy.sh --code-only`.
+Later code changes: `./deploy.sh --flex --code-only`.
 
-### Which plan
+### How the code gets there, and why not the obvious way
 
-`./deploy.sh` uses classic Linux Consumption. `./deploy.sh --flex` uses **Flex
-Consumption**, which is what Microsoft now recommends and what you probably
-want: classic Linux Consumption reaches end of life in 2028, its Kudu site is a
-stub that breaks the normal deployment paths, and its cold starts are worse,
-which shows when someone is tapping through a quiz at a stand.
+On Flex, `npm install` runs locally, the app is zipped with its `node_modules`,
+and `az functionapp deployment source config-zip` hands it to Flex's own
+deployment container. Flex registers the triggers itself. That is all.
 
-A plan cannot be changed under an existing app, so `--flex` creates a
-separate one (`wsjpatrol-fn` by default) alongside. Delete the old app once the
-new one answers.
+The script still carries a classic Linux Consumption path, without `--flex`.
+Do not use it. It is kept only because it documents an evening of failure:
 
-### How the code gets there
+- A Linux Consumption app has only a stub of a Kudu/SCM site. It answers 503
+  from the moment the app is created, before anything is deployed to it, and
+  never warms up. That takes down `config-zip --build-remote`, `func azure
+  functionapp publish`, and `syncfunctiontriggers` alike.
+- `az` itself crashes with a `JSONDecodeError` on that path, because it reads
+  app settings back from SCM and gets an HTML error page instead of JSON.
+- Run-from-package (a SAS link in `WEBSITE_RUN_FROM_PACKAGE`) does get the code
+  in place without touching SCM, and the classic path here does that. It still
+  never booted: the host emitted no telemetry at all across three successful
+  uploads by three different mechanisms.
 
-Run-from-package: `npm install` runs locally, the whole thing is zipped with
-its `node_modules`, uploaded to a `deployments` container in the storage
-account, and `WEBSITE_RUN_FROM_PACKAGE` is pointed at a read-only SAS link to
-that blob. The app mounts it read-only and restarts.
-
-The obvious-looking alternative, `az functionapp deployment source config-zip
---build-remote`, does not work here. A Linux Consumption app has only a stub of
-a Kudu/SCM site, so the server-side npm install has nothing to run on: the
-deployment endpoint answers 503 indefinitely, and the CLI itself crashes with a
-JSONDecodeError when it tries to read app settings back from SCM and gets an
-HTML error page. Run-from-package never touches SCM.
-
-Setting `WEBSITE_RUN_FROM_PACKAGE` is not on its own enough: the platform also
-has to be told what triggers the package contains, which `config-zip` would
-have done for you. Without that POST to `syncfunctiontriggers` the scale
-controller has nothing to start, `az functionapp function list` answers Bad
-Request, and the app returns 503 to everything however long you wait. The
-script does it and retries.
-
-Old packages stay in the container. Delete them when you like; the app only
-ever reads the one the setting points at.
+Flex worked first time. If you are ever tempted by classic Consumption, do not
+read a 503 on a freshly created resource as provisioning lag.
 
 Overridable with environment variables: `RG`, `LOCATION`, `APP`, `STORAGE`,
 `REUNION_ENDS`, `ALLOWED_ORIGIN`, `ADMIN_TOKEN`.
@@ -162,7 +157,7 @@ The app promises people a date, so it is kept three ways rather than one:
    the sweep has not run;
 3. the first request to arrive after the cutoff kicks off a sweep itself.
 
-Plus **Delete everything** in the console for right now.
+Plus **Start clean** in the console for right now.
 
 ## Running it locally
 
