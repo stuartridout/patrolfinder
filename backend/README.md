@@ -3,8 +3,8 @@
 The API behind [wsjpatrol.com](https://wsjpatrol.com): the patrol tally, email
 sign-ups, the patrol log, and the console the Jamboree Team runs it from.
 
-One Azure Function App on the Consumption plan, plus the storage account it
-needs anyway. At event scale it sits inside the free monthly execution grant
+One Azure Function App on the Consumption plan (Linux, Node 24), plus the
+storage account it needs anyway. At event scale it sits inside the free monthly execution grant
 and the storage costs pennies a month.
 
 ## What it stores

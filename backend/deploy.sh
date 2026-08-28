@@ -9,7 +9,7 @@
 # Creates, in one new resource group and nothing else:
 #   - a Storage Account (the Function App needs one anyway; the tally,
 #     sign-ups, photo metadata and the image blobs all live in it)
-#   - a Linux Consumption Function App on Node 20
+#   - a Linux Consumption Function App on Node 24
 #
 # At this scale the Function App sits inside the free monthly grant and the
 # storage account costs pennies. Nothing here needs a paid tier.
@@ -83,11 +83,11 @@ if [ "$CODE_ONLY" -eq 0 ]; then
     --allow-blob-public-access false --min-tls-version TLS1_2 \
     --output none
 
-  say "Function app $APP (Linux consumption, Node 20)"
+  say "Function app $APP (Linux consumption, Node 24)"
   az functionapp create \
     --name "$APP" --resource-group "$RG" --storage-account "$STORAGE" \
     --consumption-plan-location "$LOCATION" \
-    --runtime node --runtime-version 20 --functions-version 4 \
+    --runtime node --runtime-version 24 --functions-version 4 \
     --os-type Linux --disable-app-insights true \
     --output none
 
