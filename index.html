@@ -9,7 +9,22 @@
 <meta property="og:title" content="Which patrol are you?">
 <meta property="og:description" content="Seven quick questions to find your 1907 Brownsea patrol. 120 years of Scouting. UK Pavilion, Poland 2027.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://stuartridout.github.io/patrolfinder/">
+<meta property="og:url" content="https://wsjpatrol.com/">
+<meta property="og:image" content="https://wsjpatrol.com/icons/og-card.png">
+<meta name="twitter:card" content="summary">
+
+<!-- PWA. These four live at real URLs because a service worker cannot be
+     registered from a data: URI, so the Publish workflow ships them next to
+     index.html. -->
+<link rel="canonical" href="https://wsjpatrol.com/">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Which patrol?">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
   :root{
     --paper:#FAF5E9;
@@ -300,6 +315,163 @@
     .postmark-result{width:100px;right:4px;top:6px}
   }
 
+
+  /* ============================================================
+     TALLY — how the four patrols are running. Only ever drawn
+     from real numbers off the API; never a guess.
+     ============================================================ */
+  .tally{margin-top:14px}
+  /* Both only exist once real numbers arrive; empty they must not leave a gap. */
+  .tally:empty,.countline:empty{display:none;margin:0}
+  .tallybar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:rgba(27,53,121,.12)}
+  .tallybar i{display:block;height:100%;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .tallybar .seg-wolves{background:var(--wolves)}
+  .tallybar .seg-bulls{background:var(--bulls)}
+  .tallybar .seg-curlews{background:var(--curlews)}
+  .tallybar .seg-ravens{background:var(--ravens)}
+  .tallykey{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:.72rem;font-weight:700}
+  .tallykey span{display:flex;align-items:center;gap:6px}
+  .tallykey i{width:10px;height:10px;border-radius:3px;flex:none}
+  .tallykey b{font-variant-numeric:tabular-nums}
+  .tallykey .me{text-decoration:underline;text-underline-offset:3px}
+  .countline{font-size:.8rem;font-weight:700;opacity:.85;margin-top:14px;text-align:center;font-variant-numeric:tabular-nums}
+  .countline.left{text-align:left}
+
+  /* ============================================================
+     PATROL CARD STUDIO
+     ============================================================ */
+  .studio .card{margin-top:12px}
+  .cardtop{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .stagewrap{
+    position:relative;margin:0 auto;width:100%;max-width:19rem;
+    border-radius:14px;overflow:hidden;background:rgba(27,53,121,.1);
+    box-shadow:0 10px 30px rgba(0,0,0,.22);
+  }
+  .stagewrap canvas{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
+  .stagewrap canvas.dragging{cursor:grabbing}
+  .stagewrap.circlecrop::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    box-shadow:0 0 0 9999px rgba(27,53,121,.32);
+    border-radius:50%;
+  }
+  .stagenote{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    opacity:.75;text-align:center;margin-top:8px}
+  .segrow{display:flex;gap:6px;margin-top:12px;background:rgba(27,53,121,.08);padding:4px;border-radius:12px}
+  .segrow button{
+    flex:1;min-height:44px;cursor:pointer;border:0;border-radius:9px;background:transparent;
+    font-family:var(--sans);font-size:.78rem;font-weight:800;line-height:1.2;color:var(--navy);
+    padding:8px 4px;
+  }
+  .segrow button[aria-pressed="true"]{background:#fff;box-shadow:0 1px 4px rgba(27,53,121,.2)}
+  /* Full-strength navy: at this size a faded tint drops under 4.5:1. */
+  .segrow .segsub{font-weight:700;color:#3B4E86}
+  .segrow button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+  .zoomrow{display:flex;align-items:center;gap:10px;margin-top:12px}
+  .zoomrow label{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+  .zoomrow input[type=range]{flex:1;min-height:44px;accent-color:var(--red)}
+  .photorow{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .filebtn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    min-height:52px;cursor:pointer;text-align:center;
+    font-family:var(--sans);font-size:1rem;font-weight:700;color:var(--navy);
+    background:#fff;border:2px dashed rgba(27,53,121,.4);border-radius:14px;padding:14px;
+  }
+  .filebtn:focus-within{outline:3px solid var(--red);outline-offset:2px}
+  .filebtn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .privacy{
+    margin-top:12px;padding:12px 14px;border-radius:12px;
+    background:rgba(47,125,63,.1);border-left:4px solid var(--bulls);
+    font-size:.78rem;line-height:1.5;font-weight:600;color:var(--navy);
+  }
+  .privacy b{font-weight:800}
+  .warnbox{
+    margin-top:12px;padding:12px 14px;border-radius:12px;
+    background:rgba(225,51,39,.09);border-left:4px solid var(--red);
+    font-size:.78rem;line-height:1.5;font-weight:600;color:var(--navy);
+  }
+  .warnbox ul{margin:8px 0 0 18px;padding:0}
+  .warnbox li{margin-bottom:4px}
+  .consent{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:.8rem;
+    font-weight:700;line-height:1.45;cursor:pointer;color:var(--navy)}
+  .consent input{width:22px;height:22px;flex:none;margin-top:1px;accent-color:var(--bulls)}
+  .btn.go[disabled],.btn.primary[disabled]{opacity:.5;cursor:not-allowed}
+
+  /* ============================================================
+     PATROL LOG — the public wall
+     ============================================================ */
+  .logfilter{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+  .logfilter button{
+    min-height:44px;padding:8px 14px;cursor:pointer;
+    font-family:var(--sans);font-size:.78rem;font-weight:800;
+    color:var(--navy);background:#fff;border:2px solid var(--sky-line);border-radius:99px;
+  }
+  .logfilter button[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);color:#fff}
+  .logfilter button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+  .loggrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+  .logcard{position:relative;border-radius:12px;overflow:hidden;background:#fff;
+    border:2px solid var(--sky-line);aspect-ratio:1/1}
+  .logcard img{width:100%;height:100%;object-fit:cover;display:block}
+  .logcard span{
+    position:absolute;left:6px;bottom:6px;padding:3px 8px;border-radius:99px;
+    font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;
+  }
+  .logcard .p-wolves{background:var(--wolves)}
+  .logcard .p-bulls{background:var(--bulls)}
+  .logcard .p-curlews{background:var(--curlews);color:var(--navy)}
+  .logcard .p-ravens{background:var(--ravens)}
+  .reportbtn{
+    position:absolute;right:2px;top:2px;min-height:44px;min-width:44px;padding:12px;cursor:pointer;
+    background-clip:content-box;
+    font-family:var(--sans);font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:#fff;background:rgba(27,53,121,.86);border:0;border-radius:99px;
+  }
+  .reportbtn:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+  .logempty{margin-top:18px;font-size:.95rem;font-weight:600;line-height:1.5;opacity:.9}
+  .reportlink{display:inline-block;margin-top:16px;font-size:.72rem;font-weight:700;
+    color:var(--navy);opacity:.8}
+
+  /* ============================================================
+     TOAST + INSTALL
+     ============================================================ */
+  .toast{
+    position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);
+    z-index:20;max-width:min(24rem,calc(100vw - 32px));
+    background:var(--navy);color:#fff;border-radius:12px;
+    padding:12px 16px;font-size:.85rem;font-weight:700;line-height:1.4;
+    box-shadow:0 8px 26px rgba(0,0,0,.3);
+    animation:fadeup .25s ease both;
+  }
+  .toast.bad{background:var(--red-ink)}
+  .installbtn{
+    display:none;align-items:center;gap:8px;margin-top:12px;
+    min-height:44px;padding:10px 16px;cursor:pointer;
+    font-family:var(--sans);font-size:.82rem;font-weight:800;
+    background:transparent;color:inherit;border:2px solid currentColor;border-radius:99px;
+    opacity:.85;
+  }
+  .installbtn.on{display:inline-flex}
+  .linkbtn{
+    background:none;border:0;padding:10px 0;min-height:44px;cursor:pointer;
+    font-family:var(--sans);font-size:.82rem;font-weight:800;color:inherit;
+    text-decoration:underline;text-underline-offset:4px;opacity:.9;
+  }
+  .linkbtn:focus-visible{outline:3px solid var(--red);outline-offset:3px}
+
+  /* Buttons sitting on a white card must not inherit the flood's
+     white-on-transparent treatment, or they vanish. */
+  body.result-mode .card .btn,body.result-curlews .card .btn{
+    background:#fff;border-color:var(--sky-line);color:var(--navy);text-align:center;
+  }
+  body.result-mode .card .btn.primary,body.result-curlews .card .btn.primary{
+    background:var(--navy);border-color:var(--navy);color:#fff;
+  }
+  .card .stack .btn,.card .stack .btn.go{width:100%;margin:0}
+
+  @media (min-width:900px){
+    .stagewrap{max-width:22rem}
+    .loggrid{grid-template-columns:repeat(4,1fr)}
+  }
+
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation:none!important;transition:none!important}
   }
@@ -322,11 +494,38 @@
 <script>
 /* ============================================================
    CONFIG
-   Paste your form endpoint here to switch on email capture,
-   e.g. a Formspree endpoint: https://formspree.io/f/abcdwxyz
+   Three switches. Every one of them is safe to leave empty: the
+   page degrades to an honest "not switched on yet" notice rather
+   than pretending or failing.
+
+   API_BASE      the patrolfinder API (backend/worker.js deploys it).
+                 Switches on the patrol tally, email capture and the
+                 patrol log in one go. No trailing slash.
+                 e.g. "https://patrolfinder-api.stuartridout.workers.dev"
+
+   EMAIL_ENDPOINT  a plain form service (Formspree, Getform, Basin) for
+                 email capture only. Used when API_BASE is empty, so the
+                 sign-up can go live before the API does.
+
+   REUNION_ENDS  the last day of Gilwell Reunion, ISO. Photos in the
+                 patrol log are deleted seven days after it, and that
+                 date is shown to people before they upload, so keep it
+                 honest and keep it in step with the worker.
    ============================================================ */
+const API_BASE = "";
 const EMAIL_ENDPOINT = "";
+const REUNION_ENDS = "2026-09-06";
+
+/* The public home of the quiz. Shared links and the address printed on every
+   card use this, so they stay right wherever the page is actually served from
+   (the github.io URL still works, it just points people here). */
+const SITE_URL = "https://wsjpatrol.com";
+
 const JAMBOREE_URL = "https://www.scouts.org.uk/volunteers/running-your-section/programme-guidance/international-scouts-and-events/international-events/wsj/";
+const CONTACT_EMAIL = "";
+
+/* Official Poland 2027 lockup, used at size on a clean light plate. */
+const WSJ_MARK = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEwODAgMTA4MCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWw6c3BhY2U9InByZXNlcnZlIiB4bWxuczpzZXJpZj0iaHR0cDovL3d3dy5zZXJpZi5jb20vIiBzdHlsZT0iZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjI7Ij4KICAgIDxnIGlkPSJSR0Jfc2lnbmV0X2NvbG9yX1dTSjIwMjciIHRyYW5zZm9ybT0ibWF0cml4KDAuNTYyNSwwLDAsMSwwLDApIj4KICAgICAgICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBzdHlsZT0iZmlsbDpub25lOyIvPgogICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuOTg0NjE1LC03LjIxMDY4ZS0zMiw3Ljg4ODZlLTMxLDAuNTUzODQ2LC00NDYxNy43LC02ODQwKSI+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik00NjI4OS45LDEyNjc1QzQ2NjQ4LjYsMTI2NzUgNDY5MzkuOSwxMjk2Ni4zIDQ2OTM5LjksMTMzMjVDNDY5MzkuOSwxMzY4My44IDQ2NjQ4LjYsMTM5NzUgNDYyODkuOSwxMzk3NUM0NTkzMS4xLDEzOTc1IDQ1NjM5LjksMTM2ODMuOCA0NTYzOS45LDEzMzI1QzQ1NjM5LjksMTI5NjYuMyA0NTkzMS4xLDEyNjc1IDQ2Mjg5LjksMTI2NzVaTTQ1OTM4LDEzNzQ3LjZDNDYwMzMuNCwxMzgyNy4xIDQ2MTU2LjEsMTM4NzUgNDYyODkuOSwxMzg3NUM0NjU5My40LDEzODc1IDQ2ODM5LjksMTM2MjguNiA0NjgzOS45LDEzMzI1QzQ2ODM5LjksMTMwMjEuNSA0NjU5My40LDEyNzc1IDQ2Mjg5LjksMTI3NzVDNDU5ODYuMywxMjc3NSA0NTczOS45LDEzMDIxLjUgNDU3MzkuOSwxMzMyNUM0NTczOS45LDEzNDU4LjggNDU3ODcuOCwxMzU4MS41IDQ1ODY3LjMsMTM2NzYuOUw0NTkxOS44LDEzNjI0LjNMNDU5MTkuOCwxMzI5NS4xTDQ2MDE5LjgsMTMyOTUuMUw0NjAyMC4yLDEzNTI0TDQ2MDg5LjksMTM0NTQuM0w0NjA4OS45LDEzMTI1TDQ2MTg5LjksMTMxMjVMNDYxOTAuMiwxMzM1NEw0NjQ2OC45LDEzMDc1LjNMNDYyMzkuOSwxMzA3NUw0NjIzOS45LDEyOTc1TDQ2NjM5LjksMTI5NzVMNDY2MzkuOSwxMzM3NUw0NjUzOS45LDEzMzc1TDQ2NTM5LjYsMTMxNDZMNDY1MzAuNiwxMzE1NUw0NjUzMC43LDEzMTU1TDQ2MjYwLjksMTM0MjQuN0w0NjQ4OS45LDEzNDI1TDQ2NDg5LjksMTM1MjVMNDYxNjAuNiwxMzUyNUw0NjA5MC45LDEzNTk0LjhMNDYzMTkuOCwxMzU5NS4xTDQ2MzE5LjgsMTM2OTUuMUw0NTk5MC42LDEzNjk1LjFMNDU5MzgsMTM3NDcuNloiIHN0eWxlPSJmaWxsOnJnYigyMDMsNDQsNDApOyIvPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==";
 
 /* ============================================================
    DATA — edit copy here
@@ -364,20 +563,20 @@ const PATROLS = {
 
 const QUESTIONS = [
   { weight:2,
-    prompt:"6am. The kudu horn sounds across the camp. You are...",
-    options:[
-      {p:"bulls",   t:"First out, calling the others on"},
-      {p:"curlews", t:"Already awake. You heard the ferry an hour ago"},
-      {p:"wolves",  t:"Counting your patrol out of the tent"},
-      {p:"ravens",  t:"Rigging a quicker way to get the cocoa on"}
-    ]},
-  { weight:1,
     prompt:"An hour to set up camp. What's your job?",
     options:[
       {p:"ravens",  t:"Finding a better way to pitch the tent"},
       {p:"bulls",   t:"Hauling kit and driving pegs before anyone asks"},
       {p:"curlews", t:"Reading the ground. Wind, level, where rain pools"},
       {p:"wolves",  t:"Pairing everyone up, every job gets a buddy"}
+    ]},
+  { weight:1,
+    prompt:"6am. The kudu horn sounds across the camp. You are...",
+    options:[
+      {p:"bulls",   t:"First out, calling the others on"},
+      {p:"curlews", t:"Already awake. You heard the ferry an hour ago"},
+      {p:"wolves",  t:"Counting your patrol out of the tent"},
+      {p:"ravens",  t:"Rigging a quicker way to get the cocoa on"}
     ]},
   { weight:1,
     prompt:"Out tracking. What do you notice first?",
@@ -406,7 +605,7 @@ const QUESTIONS = [
   { weight:1,
     prompt:"Someone's struggling in the water. You...",
     options:[
-      {p:"bulls",   t:"Are in before you've finished thinking"},
+      {p:"bulls",   t:"Are immediately down at the waterside. Weighing up the situation. Giving reassurances."},
       {p:"ravens",  t:"Grab the line and judge the throw"},
       {p:"wolves",  t:"Link everyone into a rescue chain"},
       {p:"curlews", t:"Shout instructions, signal for help"}
@@ -417,7 +616,7 @@ const QUESTIONS = [
       {p:"ravens",  t:"Improve it. You've already got ideas"},
       {p:"wolves",  t:"Keep this patrol together for life"},
       {p:"curlews", t:"Carry the story. Tell everyone"},
-      {p:"bulls",   t:"Start it in your own town"}
+      {p:"bulls",   t:"Start a patrol in your own town"}
     ]}
 ];
 
@@ -506,7 +705,8 @@ async function submitEmail(id){
     input.classList.add("bad");
     return;
   }
-  if(!EMAIL_ENDPOINT){
+  const target = apiUrl("/email") || EMAIL_ENDPOINT;
+  if(!target){
     note.textContent = "Sign-up isn't switched on yet. Come and find us at Reunion instead.";
     note.classList.add("info");
     return;
@@ -514,10 +714,10 @@ async function submitEmail(id){
   btn.textContent = "Sending...";
   btn.disabled = true;
   try{
-    const res = await fetch(EMAIL_ENDPOINT, {
+    const res = await fetch(target, {
       method:"POST",
       headers:{"Accept":"application/json","Content-Type":"application/json"},
-      body: JSON.stringify({email:email, patrol:PATROLS[id].name, source:"patrolfinder"})
+      body: JSON.stringify({email:email, patrol:id, patrolName:PATROLS[id].name, source:"patrolfinder"})
     });
     if(!res.ok) throw new Error("send failed");
     document.getElementById("emailrow").outerHTML =
@@ -530,14 +730,732 @@ async function submitEmail(id){
   }
 }
 
+
+/* ============================================================
+   SHARED HELPERS
+   ============================================================ */
+const PATROL_HEX  = {wolves:"#2A5CAD", bulls:"#2F7D3F", curlews:"#F5B01E", ravens:"#C02D24"};
+/* Curlews yellow is unreadable as type on cream, so cards ink it darker.
+   The flood colour itself never changes: the patrol colours are historical. */
+const PATROL_INK  = {wolves:"#2A5CAD", bulls:"#2A6E38", curlews:"#8A6100", ravens:"#B0271E"};
+const PAPER = "#FAF5E9";
+const NAVY  = "#1B3579";
+const SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+const SANS  = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+const PATROL_IDS = ["wolves","bulls","curlews","ravens"];
+
+/* Cream on the three dark floods, navy on Curlews yellow. */
+function onFlood(id){ return id === "curlews" ? NAVY : PAPER; }
+
+function apiUrl(path){
+  return API_BASE ? API_BASE.replace(/\/+$/,"") + path : "";
+}
+
+function toast(msg, bad){
+  const old = document.querySelector(".toast");
+  if(old) old.remove();
+  const t = document.createElement("p");
+  t.className = "toast" + (bad ? " bad" : "");
+  t.setAttribute("role","status");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.remove(); }, bad ? 6000 : 4000);
+}
+
+/* Photos come down seven days after the last day of Reunion. That promise is
+   made to people before they upload, so the date is computed, never typed. */
+function purgeDate(){
+  const d = new Date(REUNION_ENDS + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + 7);
+  return d;
+}
+function purgeDateText(){
+  return purgeDate().toLocaleDateString("en-GB", {day:"numeric", month:"long", year:"numeric", timeZone:"UTC"});
+}
+
+function esc(str){
+  return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* ============================================================
+   PATROL TALLY
+   A count of outcomes and nothing else. No answers, no identity,
+   no timestamps beyond the day. Drawn only from real numbers:
+   with no API wired the bar simply does not appear.
+   ============================================================ */
+let tallyData = null;
+let tallyCounted = false;
+
+async function loadTally(){
+  if(!apiUrl("")) return null;
+  try{
+    const res = await fetch(apiUrl("/tally"), {headers:{"Accept":"application/json"}});
+    if(!res.ok) throw new Error("tally");
+    const data = await res.json();
+    if(data && typeof data === "object") tallyData = data;
+    return tallyData;
+  }catch(_){ return null; }
+}
+
+async function recordOutcome(id){
+  if(tallyCounted) return;          /* one count per finished quiz, not per re-render */
+  tallyCounted = true;
+  if(!apiUrl("")) return;
+  try{
+    const res = await fetch(apiUrl("/tally"), {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({patrol:id})
+    });
+    if(res.ok){
+      const data = await res.json().catch(()=>null);
+      if(data && typeof data === "object") tallyData = data;
+    }
+  }catch(_){ /* offline at the campsite is normal; the count is not worth a fuss */ }
+}
+
+function tallyTotal(){
+  if(!tallyData) return 0;
+  return PATROL_IDS.reduce((n,p)=> n + (Number(tallyData[p]) || 0), 0);
+}
+
+/* Fills #tally once numbers exist. Called after the screen is on the page so
+   the result never waits on the network. */
+function paintTally(mine){
+  const host = document.getElementById("tally");
+  if(!host || !tallyData) return;
+  const total = tallyTotal();
+  if(total < 1) return;
+  const segs = PATROL_IDS.map(p=>{
+    const n = Number(tallyData[p]) || 0;
+    const pct = total ? (n/total*100) : 0;
+    return {p, n, pct};
+  });
+  host.innerHTML = `
+    <p class="tiny">How the camp is splitting</p>
+    <div class="tallybar" role="img" aria-label="${segs.map(s=>`${s.p}: ${s.n}`).join(", ")}">
+      ${segs.map(s=>`<i class="seg-${s.p}" style="width:${s.pct.toFixed(1)}%"></i>`).join("")}
+    </div>
+    <div class="tallykey">
+      ${segs.map(s=>`<span class="${s.p===mine?"me":""}"><i class="seg-${s.p}" style="background:${PATROL_HEX[s.p]}"></i>${PATROLS[s.p].name} <b>${Math.round(s.pct)}%</b></span>`).join("")}
+    </div>
+    <p class="micro">${total.toLocaleString("en-GB")} ${total === 1 ? "patrol" : "patrols"} found so far. We keep the count, nothing else.</p>`;
+}
+
+/* ============================================================
+   ANIMAL SILHOUETTES FOR CANVAS
+   The four heads already live in the stylesheet as alpha masks.
+   Rather than carry a second copy of ~100KB of base64, lift the
+   data URI straight off the computed style and tint it.
+   ============================================================ */
+const headCache = {};
+
+function headDataUri(id){
+  const probe = document.createElement("span");
+  probe.className = "head head-" + id;
+  probe.style.cssText = "position:absolute;left:-9999px;top:0;width:1px;height:1px";
+  document.body.appendChild(probe);
+  const cs = getComputedStyle(probe);
+  const raw = cs.webkitMaskImage || cs.maskImage || "";
+  probe.remove();
+  const m = raw.match(/url\(["']?(data:[^"')]+)["']?\)/);
+  return m ? m[1] : null;
+}
+
+function loadHead(id){
+  if(headCache[id]) return headCache[id];
+  headCache[id] = new Promise((resolve)=>{
+    const uri = headDataUri(id);
+    if(!uri){ resolve(null); return; }
+    const img = new Image();
+    img.onload = ()=>resolve(img);
+    img.onerror = ()=>resolve(null);
+    img.src = uri;
+  });
+  return headCache[id];
+}
+
+/* Draw the silhouette in one flat colour, fitted inside w x h. */
+function drawHead(ctx, img, colour, x, y, w, h, alpha){
+  if(!img) return;
+  const scale = Math.min(w/img.width, h/img.height);
+  const dw = img.width*scale, dh = img.height*scale;
+  const off = document.createElement("canvas");
+  off.width = Math.max(1, Math.round(dw));
+  off.height = Math.max(1, Math.round(dh));
+  const o = off.getContext("2d");
+  o.drawImage(img, 0, 0, off.width, off.height);
+  o.globalCompositeOperation = "source-in";
+  o.fillStyle = colour;
+  o.fillRect(0, 0, off.width, off.height);
+  ctx.save();
+  if(alpha != null) ctx.globalAlpha = alpha;
+  ctx.drawImage(off, x + (w-dw)/2, y + (h-dh)/2, dw, dh);
+  ctx.restore();
+}
+
+/* ============================================================
+   CARD DRAWING
+   Everything is expressed as a fraction of the frame, so the same
+   routine draws the small on-screen preview and the full-size
+   export with no second layout.
+   ============================================================ */
+const FORMATS = {
+  profile:{ w:1080, h:1080, label:"Profile picture", sub:"Square",
+            note:"Sized for a round profile picture. Everything important sits inside the circle." },
+  post:   { w:1080, h:1350, label:"Instagram post", sub:"4:5",
+            note:"The tallest portrait Instagram will show in the feed without cropping." },
+  story:  { w:1080, h:1920, label:"Story", sub:"9:16",
+            note:"Full screen, with room left top and bottom for Instagram's own buttons." }
+};
+
+/* Sets ctx.font, shrinking it until the line fits the space it has. Patrol
+   names are short but "I'm a Curlew - which patrol are you?" is not. */
+function fitFont(ctx, text, maxW, size, weight, family){
+  let px = size;
+  ctx.font = `${weight} ${px}px ${family}`;
+  while(px > size*0.6 && ctx.measureText(text).width > maxW){
+    px -= size*0.025;
+    ctx.font = `${weight} ${px}px ${family}`;
+  }
+  return px;
+}
+
+/* The card is going to be looked at away from any link, so it carries the
+   address in plain text. */
+function cardUrlLine(){
+  try{
+    const u = new URL(SITE_URL);
+    return (u.host + u.pathname).replace(/\/$/, "");
+  }catch(_){ return "wsjpatrol.com"; }
+}
+
+function drawPhoto(ctx, img, x, y, w, h, st){
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  const base = Math.max(w/img.width, h/img.height);
+  const sc = base * st.zoom;
+  const dw = img.width*sc, dh = img.height*sc;
+  const cx = x + w/2 + st.ox*w;
+  const cy = y + h/2 + st.oy*h;
+  ctx.drawImage(img, cx - dw/2, cy - dh/2, dw, dh);
+  ctx.restore();
+}
+
+/* Text set along a circle. Tops point inwards so the bottom of a
+   badge reads the right way up. */
+function arcText(ctx, text, cx, cy, r, centreAngle, spacing){
+  const chars = [...text];
+  const widths = chars.map(c => ctx.measureText(c).width);
+  const total = widths.reduce((a,b)=>a+b, 0) + spacing*(chars.length-1);
+  let a = centreAngle + (total/2)/r;          /* angle decreases left to right */
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  chars.forEach((ch,i)=>{
+    const step = widths[i]/r;
+    a -= step/2;
+    ctx.save();
+    ctx.translate(cx + r*Math.cos(a), cy + r*Math.sin(a));
+    ctx.rotate(a - Math.PI/2);
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
+    a -= step/2 + spacing/r;
+  });
+  ctx.restore();
+}
+
+/* The 120 postmark, redrawn for canvas. */
+function drawPostmark(ctx, cx, cy, r, colour, alpha, onPhoto){
+  ctx.save();
+  if(onPhoto){
+    const halo = ctx.createRadialGradient(cx, cy, r*0.2, cx, cy, r*1.7);
+    halo.addColorStop(0, "rgba(0,0,0,0.34)");
+    halo.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(cx, cy, r*1.7, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = alpha == null ? 1 : alpha;
+  ctx.strokeStyle = colour;
+  ctx.fillStyle = colour;
+  ctx.lineWidth = r*0.045;
+  ctx.setLineDash([r*0.09, r*0.09]);
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.lineWidth = r*0.027;
+  ctx.beginPath(); ctx.arc(cx, cy, r*0.73, 0, Math.PI*2); ctx.stroke();
+  ctx.font = `800 ${r*0.44}px ${SANS}`;
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.fillText("120", cx, cy + r*0.06);
+  ctx.font = `700 ${r*0.15}px ${SANS}`;
+  ctx.fillText("YEARS", cx, cy + r*0.30);
+  ctx.font = `700 ${r*0.135}px ${SANS}`;
+  ctx.fillText("1907 • 2027", cx, cy + r*0.55);
+  ctx.font = `700 ${r*0.15}px ${SANS}`;
+  arcText(ctx, "BROWNSEA ISLAND", cx, cy, r*0.86, -Math.PI/2, r*0.04);
+  ctx.restore();
+}
+
+/* A hand-torn paper edge rather than a ruled line. Deterministic, so the
+   preview and the export tear in exactly the same places. */
+function tornEdge(ctx, y, W, amp, seed){
+  const steps = 26;
+  ctx.lineTo(W, y);
+  for(let i = steps; i >= 0; i--){
+    const t = i/steps;
+    const wobble = Math.sin(t*11.3 + seed)*0.55 + Math.sin(t*27.7 + seed*2.1)*0.45;
+    ctx.lineTo(W*t, y + wobble*amp);
+  }
+}
+
+/* The stitched animal roundel that marks the patrol. */
+function drawStamp(ctx, headImg, id, cx, cy, r){
+  ctx.save();
+  /* Cream backing first, so the roundel separates from a busy photo and from
+     its own flood colour alike. */
+  ctx.fillStyle = PAPER;
+  ctx.shadowColor = "rgba(0,0,0,0.25)";
+  ctx.shadowBlur = r*0.22;
+  ctx.beginPath(); ctx.arc(cx, cy, r*1.34, 0, Math.PI*2); ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.strokeStyle = PATROL_INK[id];
+  ctx.lineWidth = r*0.07;
+  ctx.setLineDash([r*0.17, r*0.15]);
+  ctx.beginPath(); ctx.arc(cx, cy, r*1.17, 0, Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = PATROL_HEX[id];
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  drawHead(ctx, headImg, onFlood(id), cx - r*0.62, cy - r*0.56, r*1.24, r*1.12);
+}
+
+function drawCard(ctx, W, H, st){
+  const id = st.patrol;
+  const pt = PATROLS[id];
+  const head = st.head;
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
+
+  if(st.fmt === "profile") drawProfileCard(ctx, W, H, st, id, pt, head);
+  else drawPanelCard(ctx, W, H, st, id, pt, head);
+
+  ctx.restore();
+}
+
+function drawProfileCard(ctx, W, H, st, id, pt, head){
+  const S = Math.min(W, H), cx = W/2, cy = H/2;
+
+  if(st.img){
+    drawPhoto(ctx, st.img, 0, 0, W, H, st);
+    /* Enough shade at the foot for the plate to sit on, whatever the photo. */
+    const scrim = ctx.createLinearGradient(0, H*0.55, 0, H);
+    scrim.addColorStop(0, "rgba(0,0,0,0)");
+    scrim.addColorStop(1, "rgba(0,0,0,0.40)");
+    ctx.fillStyle = scrim;
+    ctx.fillRect(0, H*0.55, W, H*0.45);
+  }else{
+    ctx.fillStyle = PATROL_HEX[id];
+    ctx.fillRect(0, 0, W, H);
+    drawHead(ctx, head, onFlood(id), W*0.19, H*0.14, W*0.62, H*0.50, 0.96);
+  }
+
+  /* Cream rim, so the square reads as a badge and the circle reads as a rim. */
+  const rimW = S*0.032;
+  ctx.save();
+  ctx.strokeStyle = PAPER;
+  ctx.lineWidth = rimW;
+  ctx.beginPath(); ctx.arc(cx, cy, S/2 - rimW/2, 0, Math.PI*2); ctx.stroke();
+  ctx.restore();
+
+  /* Patrol-colour arc plate across the foot of the badge. */
+  const outerR = S/2 - rimW;
+  const innerR = outerR - S*0.152;
+  const half = 1.18;                       /* radians either side of straight down */
+  /* Same rule as the result banners: the plate re-inks against what is behind
+     it rather than sitting in one fixed colour. On a photo the patrol colour
+     is the plate; on the patrol's own flood the plate goes cream. */
+  const plate = st.img ? PATROL_HEX[id] : PAPER;
+  const plateInk = st.img ? onFlood(id) : PATROL_INK[id];
+  ctx.save();
+  ctx.fillStyle = plate;
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR, Math.PI/2 - half, Math.PI/2 + half, false);
+  ctx.arc(cx, cy, innerR, Math.PI/2 + half, Math.PI/2 - half, true);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = st.img ? 1 : 0.35;
+  ctx.strokeStyle = st.img ? PAPER : PATROL_INK[id];
+  ctx.lineWidth = S*0.007;
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, Math.PI/2 - half, Math.PI/2 + half, false);
+  ctx.stroke();
+  ctx.restore();
+
+  /* Both lines sit on the plate, never half on the photo behind it. */
+  ctx.save();
+  ctx.fillStyle = plateInk;
+  ctx.font = `800 ${S*0.024}px ${SANS}`;
+  arcText(ctx, "BROWNSEA 1907", cx, cy, innerR + S*0.030, Math.PI/2, S*0.014);
+  ctx.font = `700 ${S*0.080}px ${SERIF}`;
+  arcText(ctx, pt.name.toUpperCase(), cx, cy, innerR + S*0.087, Math.PI/2, S*0.011);
+  ctx.restore();
+
+  /* Animal stamp, up in the corner where a circular crop still shows it.
+     With no photo the head is already the hero, so nothing goes on top of it. */
+  if(st.img) drawStamp(ctx, head, id, W*0.255, H*0.255, S*0.115);
+}
+
+function drawPanelCard(ctx, W, H, st, id, pt, head){
+  const story = st.fmt === "story";
+  /* The panel is sized to the seven lines it has to hold, not the other way
+     round: at 4:5 a shorter panel puts the rule through the traits. */
+  const panelH = story ? H*0.29 : H*0.35;
+  const panelTop = H - panelH;
+  const photoH = panelTop + W*0.03;
+  const pad = W*0.085;
+  /* Story leaves the bottom strip clear of Instagram's own controls; the
+     post format just wants an even margin. */
+  const footRoom = story ? H*0.075 : W*0.055;
+
+  if(st.img){
+    drawPhoto(ctx, st.img, 0, 0, W, photoH, st);
+  }else{
+    ctx.fillStyle = PATROL_HEX[id];
+    ctx.fillRect(0, 0, W, photoH);
+    drawHead(ctx, head, onFlood(id), W*0.18, photoH*0.16, W*0.64, photoH*0.62, 0.95);
+  }
+
+  drawPostmark(ctx, W - pad - W*0.115, (story ? H*0.115 : W*0.16), W*0.115,
+               st.img ? PAPER : onFlood(id), st.img ? 0.95 : 0.5, !!st.img);
+
+  /* Torn cream panel. */
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(W, H);
+  tornEdge(ctx, panelTop, W, W*0.026, 1.7);
+  ctx.closePath();
+  ctx.fillStyle = PAPER;
+  ctx.shadowColor = "rgba(0,0,0,0.28)";
+  ctx.shadowBlur = W*0.03;
+  ctx.shadowOffsetY = -W*0.006;
+  ctx.fill();
+  ctx.restore();
+
+  /* Animal straddling the tear, half on the photo, half on the paper. */
+  const stampR = W*0.115;
+  drawStamp(ctx, head, id, W - pad - stampR, panelTop + W*0.012, stampR);
+
+  /* One baseline rhythm, measured down from the top of the text block, so the
+     same numbers hold at 4:5 and 9:16. The block is anchored to leave the
+     story's bottom strip clear of Instagram's own controls. */
+  const LINE = {eyebrow:0, name:0.096, tagline:0.148, rule:0.180, traits:0.224, dates:0.264, url:0.308};
+  const topY = H - footRoom - W*LINE.url;
+  const narrowW = W - pad*2 - stampR*2.5;   /* the eyebrow runs beside the stamp */
+  const wideW = W - pad*2;
+  const eyebrow = ("I'm " + pt.one + " — which patrol are you?").toUpperCase();
+  const traits = pt.traits.join("  ·  ").toUpperCase();
+  const dates = "BROWNSEA ISLAND 1907  →  GDAŃSK 2027";
+
+  ctx.save();
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+
+  ctx.fillStyle = NAVY;
+  ctx.globalAlpha = 0.8;
+  fitFont(ctx, eyebrow, narrowW, W*0.029, 800, SANS);
+  ctx.fillText(eyebrow, pad, topY + W*LINE.eyebrow);
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = PATROL_INK[id];
+  fitFont(ctx, pt.name, wideW*0.75, W*0.125, 700, SERIF);
+  ctx.fillText(pt.name, pad, topY + W*LINE.name);
+
+  ctx.fillStyle = NAVY;
+  ctx.globalAlpha = 0.9;
+  fitFont(ctx, pt.tagline, wideW, W*0.038, 600, SANS);
+  ctx.fillText(pt.tagline, pad, topY + W*LINE.tagline);
+  ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = "rgba(27,53,121,0.2)";
+  ctx.lineWidth = W*0.005;
+  ctx.beginPath();
+  ctx.moveTo(pad, topY + W*LINE.rule);
+  ctx.lineTo(pad + W*0.42, topY + W*LINE.rule);
+  ctx.stroke();
+
+  ctx.fillStyle = NAVY;
+  ctx.globalAlpha = 0.72;
+  fitFont(ctx, traits, wideW, W*0.026, 800, SANS);
+  ctx.fillText(traits, pad, topY + W*LINE.traits);
+  fitFont(ctx, dates, wideW, W*0.026, 700, SANS);
+  ctx.fillText(dates, pad, topY + W*LINE.dates);
+
+  ctx.globalAlpha = 0.95;
+  ctx.fillStyle = PATROL_INK[id];
+  fitFont(ctx, cardUrlLine(), wideW, W*0.028, 800, SANS);
+  ctx.fillText(cardUrlLine(), pad, topY + W*LINE.url);
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+/* ============================================================
+   PATROL CARD STUDIO
+   The photo is opened with FileReader/createImageBitmap and drawn
+   straight onto a canvas in this tab. It is never sent anywhere
+   unless the person separately chooses the patrol log.
+   ============================================================ */
+let studio = null;
+
+function newStudioState(id, head){
+  return { patrol:id, head:head, fmt:"profile", img:null, zoom:1, ox:0, oy:0 };
+}
+
+function clampPan(){
+  if(!studio || !studio.img) { studio.ox = 0; studio.oy = 0; return; }
+  const F = FORMATS[studio.fmt];
+  const frameH = studio.fmt === "profile" ? F.h : (F.h - (studio.fmt === "story" ? F.h*0.29 : F.h*0.35) + F.w*0.03);
+  const w = F.w, h = frameH;
+  const img = studio.img;
+  const sc = Math.max(w/img.width, h/img.height) * studio.zoom;
+  const maxX = Math.max(0, (img.width*sc - w) / 2 / w);
+  const maxY = Math.max(0, (img.height*sc - h) / 2 / h);
+  studio.ox = Math.min(maxX, Math.max(-maxX, studio.ox));
+  studio.oy = Math.min(maxY, Math.max(-maxY, studio.oy));
+}
+
+function paintPreview(){
+  const c = document.getElementById("stage");
+  if(!c || !studio) return;
+  const F = FORMATS[studio.fmt];
+  const W = 540, H = Math.round(540 * F.h / F.w);
+  if(c.width !== W || c.height !== H){ c.width = W; c.height = H; }
+  clampPan();
+  drawCard(c.getContext("2d"), W, H, studio);
+  const wrap = c.parentElement;
+  wrap.classList.toggle("circlecrop", studio.fmt === "profile");
+  const note = document.getElementById("stageNote");
+  if(note) note.textContent = F.note;
+}
+
+async function openPhoto(file){
+  if(!file) return;
+  if(!/^image\//.test(file.type)){ toast("That file isn't a photo.", true); return; }
+  try{
+    let img;
+    if(window.createImageBitmap){
+      /* from-image honours the phone's rotation flag, so portraits stay upright */
+      img = await createImageBitmap(file, {imageOrientation:"from-image"});
+    }else{
+      img = await new Promise((res, rej)=>{
+        const el = new Image();
+        el.onload = ()=>res(el);
+        el.onerror = rej;
+        el.src = URL.createObjectURL(file);
+      });
+    }
+    studio.img = img;
+    studio.zoom = 1; studio.ox = 0; studio.oy = 0;
+    paintPreview();
+    const z = document.getElementById("zoom");
+    if(z){ z.value = "1"; z.disabled = false; }
+    const rm = document.getElementById("removePhoto");
+    if(rm) rm.hidden = false;
+    toast("Photo loaded. It stays on this device.");
+  }catch(_){
+    toast("Couldn't open that photo. Try another one.", true);
+  }
+}
+
+async function renderExport(){
+  const F = FORMATS[studio.fmt];
+  const c = document.createElement("canvas");
+  c.width = F.w; c.height = F.h;
+  drawCard(c.getContext("2d"), F.w, F.h, studio);
+  return await new Promise(res => c.toBlob(res, "image/jpeg", 0.92));
+}
+
+function cardFilename(){
+  return `im-${studio.patrol}-${studio.fmt}.jpg`;
+}
+
+async function saveCard(){
+  try{
+    const blob = await renderExport();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = cardFilename();
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    toast("Saved to your device.");
+  }catch(_){ toast("Couldn't save the card. Try sharing it instead.", true); }
+}
+
+/* Share the card itself, not just a link to the quiz. */
+async function shareCard(blobIn, text){
+  const blob = blobIn || await renderExport();
+  const file = new File([blob], cardFilename(), {type:"image/jpeg"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file], text:text, title:"Which patrol are you?"});
+      return true;
+    }catch(err){
+      if(err && err.name === "AbortError") return true;   /* they changed their mind */
+    }
+  }
+  return false;
+}
+
+/* ============================================================
+   SHARE
+   ============================================================ */
+function shareUrlFor(id){
+  try{
+    const u = new URL(SITE_URL);
+    u.search = "?patrol=" + id;
+    return u.toString();
+  }catch(_){
+    const u = new URL(window.location.href);
+    u.hash = ""; u.search = "?patrol=" + id;
+    return u.toString();
+  }
+}
+
+function shareTextFor(id){
+  const pt = PATROLS[id];
+  return `I'm ${pt.one}. ${pt.tagline} Which of the four 1907 Brownsea patrols are you? 120 years of Scouting, UK Pavilion, Poland 2027.`;
+}
+
+async function sharePatrol(id, btn){
+  const text = shareTextFor(id);
+  const url = shareUrlFor(id);
+  const label = btn ? btn.textContent : "";
+  if(btn){ btn.disabled = true; btn.textContent = "Getting your card ready..."; }
+  try{
+    /* Build a card on the fly so what lands in the chat actually shows the
+       patrol. Falls back to text and a link where files can't be shared. */
+    const head = await loadHead(id);
+    const saved = studio;
+    studio = newStudioState(id, head);
+    let blob = null;
+    try{ blob = await renderExport(); }catch(_){}
+    studio = saved;
+    if(blob && await shareCard(blob, text + " " + url)) return;
+
+    if(navigator.share){
+      try{ await navigator.share({title:"Which patrol are you?", text:text, url:url}); return; }catch(err){
+        if(err && err.name === "AbortError") return;
+      }
+    }
+    if(navigator.clipboard){
+      await navigator.clipboard.writeText(text + " " + url);
+      toast("Copied. Paste it wherever you like.");
+      return;
+    }
+    toast(text, false);
+  }catch(_){
+    toast("Sharing didn't work on this device. Screenshot works fine.", true);
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = label; }
+  }
+}
+
+/* ============================================================
+   PATROL LOG
+   Optional, public, and swept seven days after Reunion. Uploads
+   are held for the Jamboree Team to release, so nothing appears
+   on the wall unchecked.
+   ============================================================ */
+async function uploadToLog(btn){
+  const consent = document.getElementById("logConsent");
+  if(!consent || !consent.checked){
+    toast("Tick the box first, so we know you're happy for it to be public.", true);
+    return;
+  }
+  if(!apiUrl("")){
+    toast("The patrol log isn't switched on yet. Come and show us at the Pavilion instead.", true);
+    return;
+  }
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Uploading...";
+  try{
+    const blob = await renderExport();
+    const fd = new FormData();
+    fd.append("patrol", studio.patrol);
+    fd.append("photo", blob, cardFilename());
+    const res = await fetch(apiUrl("/photos"), {method:"POST", body:fd});
+    if(!res.ok) throw new Error("upload");
+    document.getElementById("logbox").innerHTML =
+      `<p class="thanks">In the queue. The Jamboree Team pop cards onto the wall through the day, and everything comes down on ${esc(purgeDateText())}.</p>`;
+    toast("Sent to the patrol log.");
+  }catch(_){
+    btn.disabled = false;
+    btn.textContent = label;
+    toast("That didn't upload. Try again in a moment.", true);
+  }
+}
+
+async function reportPhoto(id, cardEl){
+  cardEl.remove();
+  toast("Hidden here, and flagged to the Jamboree Team.");
+  if(!apiUrl("")) return;
+  try{
+    await fetch(apiUrl("/report"), {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({id:id})
+    });
+  }catch(_){}
+}
+
+/* ============================================================
+   PWA
+   ============================================================ */
+let deferredInstall = null;
+
+window.addEventListener("beforeinstallprompt", (e)=>{
+  e.preventDefault();
+  deferredInstall = e;
+  document.querySelectorAll(".installbtn").forEach(b => b.classList.add("on"));
+});
+
+window.addEventListener("appinstalled", ()=>{
+  deferredInstall = null;
+  document.querySelectorAll(".installbtn").forEach(b => b.classList.remove("on"));
+});
+
+function wireInstall(){
+  const btn = document.querySelector(".installbtn");
+  if(!btn) return;
+  if(deferredInstall) btn.classList.add("on");
+  btn.addEventListener("click", async ()=>{
+    if(!deferredInstall) return;
+    deferredInstall.prompt();
+    await deferredInstall.userChoice;
+    deferredInstall = null;
+    btn.classList.remove("on");
+  });
+}
+
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+
 /* ============================================================
    RENDER
    ============================================================ */
 function renderIntro(){
   document.body.className = "";
+  const friend = sharedPatrol && PATROLS[sharedPatrol] ? PATROLS[sharedPatrol] : null;
   app.innerHTML = `
     <div class="screen intro">
       <p class="eyebrow">Brownsea Island 1907 &rarr; Gda&nacute;sk 2027</p>
+      ${friend ? `<p class="sub" style="margin-top:10px">Someone shared their patrol with you. They're <strong>${esc(friend.one)}</strong> &mdash; ${esc(friend.tagline.toLowerCase())}</p>` : ""}
       <h1 class="banner">Which patrol<br>are you?</h1>
       <div class="patrolrow">
         <div class="tile"><span class="head head-wolves" aria-hidden="true"></span><p class="tiny">Wolves</p><div class="knot knot-wolves"></div></div>
@@ -546,13 +1464,30 @@ function renderIntro(){
         <div class="tile"><span class="head head-ravens" aria-hidden="true"></span><p class="tiny">Ravens</p><div class="knot knot-ravens"></div></div>
       </div>
       <p class="sub">Twenty boys and four patrols started Scouting. Answer seven quick questions to find where you'd have belonged.</p>
+      <p class="countline left" id="introCount"></p>
       <div class="stampzone"><p class="stampnote">The camp ran 1 to 8 August 1907. The Jamboree lands 120 years later, to the week.</p><div class="postmark postmark-intro">${POSTMARK}</div></div>
       <div class="ibottom">
         <button class="btn primary" id="startBtn">Find my patrol</button>
         <p class="tiny microcopy">Seven questions &middot; about 90 seconds</p>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;margin-top:4px">
+          ${API_BASE ? `<button class="linkbtn" id="logBtn">See the patrol log</button>` : ""}
+          <button class="installbtn" id="installBtn" type="button">&#8595;&nbsp; Add to home screen</button>
+        </div>
       </div>
     </div>`;
   document.getElementById("startBtn").addEventListener("click", startQuiz);
+  const lb = document.getElementById("logBtn");
+  if(lb) lb.addEventListener("click", ()=>renderLog(null));
+  wireInstall();
+
+  /* The count only ever appears once the API has answered. */
+  loadTally().then(()=>{
+    const el = document.getElementById("introCount");
+    const total = tallyTotal();
+    if(el && total > 0){
+      el.textContent = `${total.toLocaleString("en-GB")} ${total === 1 ? "person has" : "people have"} found their patrol.`;
+    }
+  });
 }
 
 function renderQuestion(){
@@ -579,8 +1514,8 @@ function renderQuestion(){
   document.getElementById("backBtn").addEventListener("click", goBack);
 }
 
-function renderResult(){
-  const id = scoreResult();
+function renderResult(forced){
+  const id = forced || scoreResult();
   const pt = PATROLS[id];
   document.body.className = "result-mode result-" + id;
   app.innerHTML = `
@@ -602,13 +1537,14 @@ function renderResult(){
           <p class="cardhead">The 1907 ${pt.name}</p>
           <p>${pt.members}</p>
           <p class="fact">${pt.fact}</p>
+          <div class="tally" id="tally"></div>
         </div>
         <div class="card">
           <div class="ctarow">
-            <a href="${JAMBOREE_URL}" target="_blank" rel="noopener"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEwODAgMTA4MCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWw6c3BhY2U9InByZXNlcnZlIiB4bWxuczpzZXJpZj0iaHR0cDovL3d3dy5zZXJpZi5jb20vIiBzdHlsZT0iZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjI7Ij4KICAgIDxnIGlkPSJSR0Jfc2lnbmV0X2NvbG9yX1dTSjIwMjciIHRyYW5zZm9ybT0ibWF0cml4KDAuNTYyNSwwLDAsMSwwLDApIj4KICAgICAgICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBzdHlsZT0iZmlsbDpub25lOyIvPgogICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuOTg0NjE1LC03LjIxMDY4ZS0zMiw3Ljg4ODZlLTMxLDAuNTUzODQ2LC00NDYxNy43LC02ODQwKSI+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik00NjI4OS45LDEyNjc1QzQ2NjQ4LjYsMTI2NzUgNDY5MzkuOSwxMjk2Ni4zIDQ2OTM5LjksMTMzMjVDNDY5MzkuOSwxMzY4My44IDQ2NjQ4LjYsMTM5NzUgNDYyODkuOSwxMzk3NUM0NTkzMS4xLDEzOTc1IDQ1NjM5LjksMTM2ODMuOCA0NTYzOS45LDEzMzI1QzQ1NjM5LjksMTI5NjYuMyA0NTkzMS4xLDEyNjc1IDQ2Mjg5LjksMTI2NzVaTTQ1OTM4LDEzNzQ3LjZDNDYwMzMuNCwxMzgyNy4xIDQ2MTU2LjEsMTM4NzUgNDYyODkuOSwxMzg3NUM0NjU5My40LDEzODc1IDQ2ODM5LjksMTM2MjguNiA0NjgzOS45LDEzMzI1QzQ2ODM5LjksMTMwMjEuNSA0NjU5My40LDEyNzc1IDQ2Mjg5LjksMTI3NzVDNDU5ODYuMywxMjc3NSA0NTczOS45LDEzMDIxLjUgNDU3MzkuOSwxMzMyNUM0NTczOS45LDEzNDU4LjggNDU3ODcuOCwxMzU4MS41IDQ1ODY3LjMsMTM2NzYuOUw0NTkxOS44LDEzNjI0LjNMNDU5MTkuOCwxMzI5NS4xTDQ2MDE5LjgsMTMyOTUuMUw0NjAyMC4yLDEzNTI0TDQ2MDg5LjksMTM0NTQuM0w0NjA4OS45LDEzMTI1TDQ2MTg5LjksMTMxMjVMNDYxOTAuMiwxMzM1NEw0NjQ2OC45LDEzMDc1LjNMNDYyMzkuOSwxMzA3NUw0NjIzOS45LDEyOTc1TDQ2NjM5LjksMTI5NzVMNDY2MzkuOSwxMzM3NUw0NjUzOS45LDEzMzc1TDQ2NTM5LjYsMTMxNDZMNDY1MzAuNiwxMzE1NUw0NjUzMC43LDEzMTU1TDQ2MjYwLjksMTM0MjQuN0w0NjQ4OS45LDEzNDI1TDQ2NDg5LjksMTM1MjVMNDYxNjAuNiwxMzUyNUw0NjA5MC45LDEzNTk0LjhMNDYzMTkuOCwxMzU5NS4xTDQ2MzE5LjgsMTM2OTUuMUw0NTk5MC42LDEzNjk1LjFMNDU5MzgsMTM3NDcuNloiIHN0eWxlPSJmaWxsOnJnYigyMDMsNDQsNDApOyIvPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Poland 2027, 26th World Scout Jamboree"></a>
+            <a href="${JAMBOREE_URL}" target="_blank" rel="noopener"><img src="${WSJ_MARK}" alt="Poland 2027, 26th World Scout Jamboree"></a>
             <p>Help build the UK Pavilion<span class="tinyline">Poland 2027 &middot; 120 years since Brownsea</span></p>
           </div>
-          <p class="ctatext">Come and find the Pavilion team at <strong>Gilwell Reunion</strong> and tell us what the UK Pavilion should be. Or leave your email and help us design it.</p>
+          <p class="ctatext">Come and find the Jamboree Team in the <strong>International Tent</strong> and tell us your ideas for the UK Pavilion. Or leave your email and help us design it. We're keen to hear your thoughts.</p>
           <div class="emailrow" id="emailrow">
             <input id="emailIn" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" aria-label="Your email">
             <p class="micro note" id="emailNote" role="alert"></p>
@@ -619,30 +1555,262 @@ function renderResult(){
         </div>
         </div>
         <div class="stack">
-          <button class="btn primary" id="shareBtn">Share my patrol</button>
+          <button class="btn primary" id="cardBtn">Make my ${pt.name} card</button>
+        </div>
+        <div class="stack">
+          <button class="btn" id="shareBtn">Share my patrol</button>
           <button class="btn" id="againBtn">Start again</button>
         </div>
+        <button class="installbtn" id="installBtn" type="button" style="margin-left:auto;margin-right:auto">&#8595;&nbsp; Add to home screen</button>
         <p class="history">Real patrol, real names, real colour. The personalities are just for fun. BP mixed everyone up on purpose.</p>
       </div>
     </div>`;
-  document.getElementById("againBtn").addEventListener("click", renderIntro);
+  document.getElementById("againBtn").addEventListener("click", ()=>{ sharedPatrol = null; renderIntro(); });
+  document.getElementById("cardBtn").addEventListener("click", ()=>renderCardStudio(id));
   document.getElementById("emailBtn").addEventListener("click", ()=>submitEmail(id));
   document.getElementById("emailIn").addEventListener("keydown", (ev)=>{ if(ev.key==="Enter") submitEmail(id); });
-  document.getElementById("shareBtn").addEventListener("click", async (e)=>{
-    const text = "I'm " + pt.one + " \u269C Which 1907 Brownsea patrol are you? 120 years of Scouting, Poland 2027.";
-    const url = window.location.href;
-    if(navigator.share){
-      try{ await navigator.share({title:"Brownsea Patrol Finder", text:text, url:url}); }catch(_){}
-    } else if(navigator.clipboard){
-      try{
-        await navigator.clipboard.writeText(text + " " + url);
-        e.target.textContent = "Copied to clipboard";
-      }catch(_){ e.target.textContent = text; }
-    }
-  });
+  document.getElementById("shareBtn").addEventListener("click", (e)=>sharePatrol(id, e.currentTarget));
+  wireInstall();
+
+  /* Count the outcome, then show how the camp is splitting. */
+  recordOutcome(id).then(loadTally).then(()=>paintTally(id));
 }
 
-renderIntro();
+
+/* ============================================================
+   RENDER — CARD STUDIO
+   ============================================================ */
+async function renderCardStudio(id, keep){
+  const pt = PATROLS[id];
+  const head = await loadHead(id);
+  studio = keep && keep.patrol === id ? keep : newStudioState(id, head);
+  document.body.className = "result-mode result-" + id;
+
+  app.innerHTML = `
+    <div class="screen studio">
+      <h1 class="banner centered">Your ${esc(pt.name)} card</h1>
+
+      <div class="card">
+        <div class="stagewrap"><canvas id="stage" width="540" height="540" aria-label="Preview of your ${esc(pt.name)} card"></canvas></div>
+        <p class="stagenote" id="stageNote"></p>
+
+        <div class="segrow" role="group" aria-label="Card shape">
+          ${Object.keys(FORMATS).map(k=>`
+            <button type="button" data-fmt="${k}" aria-pressed="${k==="profile"}">
+              ${esc(FORMATS[k].label)}<br><span class="segsub">${esc(FORMATS[k].sub)}</span>
+            </button>`).join("")}
+        </div>
+
+        <div class="photorow">
+          <label class="filebtn">
+            <span id="fileLabel">Add a photo</span>
+            <input type="file" accept="image/*" id="photoIn">
+          </label>
+          <button class="linkbtn" id="removePhoto" hidden>Take the photo back off</button>
+        </div>
+
+        <div class="zoomrow">
+          <label for="zoom">Zoom</label>
+          <input type="range" id="zoom" min="1" max="3" step="0.01" value="1" disabled aria-label="Zoom the photo">
+        </div>
+        <p class="micro">Drag the picture to move it around. No photo? The card works on its own.</p>
+
+        <div class="privacy">
+          <b>Your photo stays on your phone.</b> The card is put together here, inside this page,
+          the same way a filter works in your camera app. The picture is never sent to us and
+          we never see it. Close the tab and it is gone.
+        </div>
+
+        <div class="stack">
+          <button class="btn primary" id="saveBtn">Save the card</button>
+          <button class="btn" id="shareCardBtn">Share the card</button>
+        </div>
+      </div>
+
+      <div class="card" id="logbox">
+        <p class="cardhead">Optional: add it to the patrol log</p>
+        <p>The Pavilion has a wall of cards from everyone at Reunion. You can put yours on it &mdash; or not. The card is yours either way, and the quiz works exactly the same if you skip this.</p>
+        <div class="warnbox">
+          <b>This one does leave your phone.</b>
+          <ul>
+            <li>Your card becomes <b>public</b>. Anyone who opens the patrol log can see it.</li>
+            <li>The Jamboree Team check every card before it goes on the wall.</li>
+            <li>Everything is <b>deleted on ${esc(purgeDateText())}</b>, seven days after Reunion.</li>
+            <li>Only the picture and the patrol are stored. No name, no email, nothing else.</li>
+            <li>Under 18? Check with your leader or a parent first.</li>
+          </ul>
+        </div>
+        <label class="consent"><input type="checkbox" id="logConsent"> I'm happy for this card to be public until it's deleted.</label>
+        <div class="stack">
+          <button class="btn go" id="uploadBtn">Add my card to the log</button>
+        </div>
+        <p class="micro">Changed your mind later? Find the Jamboree Team in the International Tent and we'll take it straight down.</p>
+      </div>
+
+      <div class="stack">
+        <button class="btn" id="seeLogBtn">See the patrol log</button>
+        <button class="btn" id="backBtn">Back to my patrol</button>
+      </div>
+    </div>`;
+
+  if(studio.img){
+    document.getElementById("zoom").disabled = false;
+    document.getElementById("zoom").value = String(studio.zoom);
+    document.getElementById("removePhoto").hidden = false;
+    document.getElementById("fileLabel").textContent = "Use a different photo";
+  }
+  app.querySelectorAll(".segrow button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fmt === studio.fmt)));
+  paintPreview();
+
+  document.getElementById("photoIn").addEventListener("change", (e)=>{
+    openPhoto(e.target.files && e.target.files[0]);
+    document.getElementById("fileLabel").textContent = "Use a different photo";
+  });
+  document.getElementById("removePhoto").addEventListener("click", (e)=>{
+    studio.img = null; studio.zoom = 1; studio.ox = 0; studio.oy = 0;
+    document.getElementById("zoom").value = "1";
+    document.getElementById("zoom").disabled = true;
+    document.getElementById("fileLabel").textContent = "Add a photo";
+    e.target.hidden = true;
+    paintPreview();
+  });
+  document.getElementById("zoom").addEventListener("input", (e)=>{
+    studio.zoom = parseFloat(e.target.value) || 1;
+    paintPreview();
+  });
+  app.querySelectorAll(".segrow button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      studio.fmt = b.dataset.fmt;
+      app.querySelectorAll(".segrow button").forEach(o => o.setAttribute("aria-pressed", String(o === b)));
+      paintPreview();
+    });
+  });
+
+  /* Drag to reframe. Pointer events cover mouse, touch and pencil in one go. */
+  const stage = document.getElementById("stage");
+  let drag = null;
+  stage.addEventListener("pointerdown", (e)=>{
+    if(!studio.img) return;
+    drag = {x:e.clientX, y:e.clientY, ox:studio.ox, oy:studio.oy};
+    stage.setPointerCapture(e.pointerId);
+    stage.classList.add("dragging");
+  });
+  stage.addEventListener("pointermove", (e)=>{
+    if(!drag) return;
+    const r = stage.getBoundingClientRect();
+    studio.ox = drag.ox + (e.clientX - drag.x) / r.width;
+    studio.oy = drag.oy + (e.clientY - drag.y) / r.height;
+    paintPreview();
+  });
+  const endDrag = ()=>{ drag = null; stage.classList.remove("dragging"); };
+  stage.addEventListener("pointerup", endDrag);
+  stage.addEventListener("pointercancel", endDrag);
+
+  document.getElementById("saveBtn").addEventListener("click", saveCard);
+  document.getElementById("shareCardBtn").addEventListener("click", async (e)=>{
+    const btn = e.currentTarget;
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Getting it ready...";
+    const done = await shareCard(null, shareTextFor(studio.patrol) + " " + shareUrlFor(studio.patrol));
+    btn.disabled = false; btn.textContent = label;
+    if(!done){ toast("This browser can't share images. Saving it instead."); saveCard(); }
+  });
+  document.getElementById("uploadBtn").addEventListener("click", (e)=>uploadToLog(e.currentTarget));
+  document.getElementById("seeLogBtn").addEventListener("click", ()=>renderLog(id));
+  document.getElementById("backBtn").addEventListener("click", ()=>renderResult(id));
+}
+
+/* ============================================================
+   RENDER — PATROL LOG
+   ============================================================ */
+async function renderLog(fromPatrol){
+  document.body.className = "";
+  app.innerHTML = `
+    <div class="screen">
+      <p class="eyebrow">The wall at the UK Pavilion</p>
+      <h1 class="banner">Patrol log</h1>
+      <p class="sub">Cards people chose to share at Gilwell Reunion. Everything here comes down on ${esc(purgeDateText())}.</p>
+      <div class="logfilter" role="group" aria-label="Filter by patrol">
+        <button data-p="all" aria-pressed="true">All</button>
+        ${PATROL_IDS.map(p=>`<button data-p="${p}" aria-pressed="false">${esc(PATROLS[p].name)}</button>`).join("")}
+      </div>
+      <div id="logBody"><p class="logempty">Loading the wall...</p></div>
+      <p class="reportlink">Something on here that shouldn't be? Tell the Jamboree Team in the International Tent, or tap Report on the card, and it comes down.</p>
+      <div class="stack">
+        <button class="btn primary" id="backBtn">${fromPatrol ? "Back to my card" : "Find my patrol"}</button>
+      </div>
+    </div>`;
+
+  const keep = studio && fromPatrol && studio.patrol === fromPatrol ? studio : null;
+  document.getElementById("backBtn").addEventListener("click", ()=>{
+    if(fromPatrol) renderCardStudio(fromPatrol, keep); else renderIntro();
+  });
+
+  let items = null;
+  let filter = "all";
+
+  function paint(){
+    const body = document.getElementById("logBody");
+    if(!body) return;
+    if(items === null){
+      body.innerHTML = `<p class="logempty">The patrol log isn't switched on yet. Come and see the wall at the Pavilion.</p>`;
+      return;
+    }
+    const shown = filter === "all" ? items : items.filter(i => i.patrol === filter);
+    if(!shown.length){
+      body.innerHTML = `<p class="logempty">Nothing on the wall yet${filter === "all" ? "" : " for the " + esc(PATROLS[filter].name)}. Be the first.</p>`;
+      return;
+    }
+    body.innerHTML = `<div class="loggrid">${shown.map(i=>`
+      <figure class="logcard" data-id="${esc(i.id)}">
+        <img src="${esc(i.url)}" alt="A ${esc(PATROLS[i.patrol] ? PATROLS[i.patrol].name : i.patrol)} card someone shared" loading="lazy">
+        <span class="p-${esc(i.patrol)}">${esc(PATROLS[i.patrol] ? PATROLS[i.patrol].name : i.patrol)}</span>
+        <button class="reportbtn" data-report="${esc(i.id)}">Report</button>
+      </figure>`).join("")}</div>`;
+    body.querySelectorAll("[data-report]").forEach(b=>{
+      b.addEventListener("click", ()=>reportPhoto(b.dataset.report, b.closest(".logcard")));
+    });
+    /* A card pulled off the wall between the list and the image request would
+       otherwise sit there as a broken frame. */
+    body.querySelectorAll(".logcard img").forEach(im=>{
+      im.addEventListener("error", ()=>{ const f = im.closest(".logcard"); if(f) f.remove(); });
+    });
+  }
+
+  app.querySelectorAll(".logfilter button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      filter = b.dataset.p;
+      app.querySelectorAll(".logfilter button").forEach(o => o.setAttribute("aria-pressed", String(o === b)));
+      paint();
+    });
+  });
+
+  if(apiUrl("")){
+    try{
+      const res = await fetch(apiUrl("/photos"), {headers:{"Accept":"application/json"}});
+      const data = await res.json();
+      items = Array.isArray(data) ? data : (data && data.items) || [];
+    }catch(_){ items = []; }
+  }
+  paint();
+}
+
+/* ============================================================
+   BOOT
+   ?patrol=  a shared result, so the link carries the patrol
+   ?log=1    straight to the wall (also a home-screen shortcut)
+   ?start=1  straight into the quiz (also a home-screen shortcut)
+   ============================================================ */
+let sharedPatrol = null;
+
+(function boot(){
+  const q = new URLSearchParams(window.location.search);
+  const shared = q.get("patrol");
+  if(shared && PATROLS[shared]) sharedPatrol = shared;
+  if(q.get("log") === "1"){ renderLog(null); return; }
+  renderIntro();
+  if(q.get("start") === "1") startQuiz();
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Brownsea patrol roundel">
+  <title>Which patrol are you?</title>
+  <rect width="512" height="512" rx="112" fill="#1B3579"/>
+  <circle cx="256" cy="256" r="207" fill="none" stroke="#FAF5E9" stroke-width="9" stroke-dasharray="19 19" stroke-linecap="butt" opacity=".85"/>
+  <circle cx="256" cy="256" r="176" fill="#FAF5E9"/>
+  <g transform="rotate(45 256 256)">
+    <path d="M256 256 L256 90 A166 166 0 0 0 90 256 Z" fill="#2A5CAD"/>
+    <path d="M256 256 L422 256 A166 166 0 0 0 256 90 Z" fill="#2F7D3F"/>
+    <path d="M256 256 L256 422 A166 166 0 0 0 422 256 Z" fill="#F5B01E"/>
+    <path d="M256 256 L90 256 A166 166 0 0 0 256 422 Z" fill="#C02D24"/>
+    <path d="M256 84 V428 M84 256 H428" stroke="#FAF5E9" stroke-width="15" stroke-linecap="round"/>
+  </g>
+  <circle cx="256" cy="256" r="41" fill="#FAF5E9"/>
+  <circle cx="256" cy="256" r="41" fill="none" stroke="#1B3579" stroke-width="9"/>
+</svg>

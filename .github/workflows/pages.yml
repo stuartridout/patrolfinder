@@ -1,10 +1,16 @@
 name: Publish to GitHub Pages
 
 # GitHub Pages serves this site from the gh-pages branch. This workflow
-# republishes index.html to that branch whenever main changes. The
+# republishes the site to that branch whenever main changes. The
 # Actions-native Pages deploy (configure-pages/deploy-pages) is not used
 # because creating/updating the Pages site via API needs repo-admin,
 # which the workflow token does not have; pushing gh-pages does not.
+#
+# The site is index.html plus the PWA files it needs at real URLs: a service
+# worker cannot be registered from a data: URI, so sw.js, the manifest and the
+# icons are published alongside it. CNAME goes with them, or GitHub Pages
+# drops the wsjpatrol.com custom domain on the next publish. Everything else
+# in the repo stays private to main.
 
 on:
   push:
@@ -23,12 +29,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Push the site to gh-pages
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          html=$(git hash-object -w index.html)
-          empty=$(git hash-object -w --stdin </dev/null)
-          tree=$(printf '100644 blob %s\t.nojekyll\n100644 blob %s\tindex.html\n' "$empty" "$html" | git mktree)
-          commit=$(git commit-tree "$tree" -m "Publish site from $GITHUB_SHA")
-          git push --force origin "$commit":refs/heads/gh-pages
+
+          touch .nojekyll
+
+          # Orphan commit holding only the published files, so gh-pages never
+          # carries the repo's working files or its history.
+          git checkout --orphan gh-pages-build
+          git rm -rq --cached .
+          git add -f .nojekyll CNAME index.html manifest.webmanifest sw.js icons
+          git commit -qm "Publish site from $GITHUB_SHA"
+          git push --force origin gh-pages-build:refs/heads/gh-pages
