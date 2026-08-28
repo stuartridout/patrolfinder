@@ -1,0 +1,13 @@
+{
+  "name": "wsjpatrol-api",
+  "version": "1.0.0",
+  "description": "The API behind wsjpatrol.com: patrol tally, sign-ups and the patrol log.",
+  "main": "src/functions/*.js",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@azure/functions": "^4.5.1",
+    "@azure/data-tables": "^13.2.2",
+    "@azure/storage-blob": "^12.24.0"
+  }
+}

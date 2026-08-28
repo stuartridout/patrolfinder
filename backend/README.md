@@ -1,10 +1,11 @@
-# patrolfinder API
+# wsjpatrol API
 
-One Cloudflare Worker behind everything in `index.html` that needs a server:
-the patrol tally, email sign-up, and the patrol log.
+The API behind [wsjpatrol.com](https://wsjpatrol.com): the patrol tally, email
+sign-ups, the patrol log, and the console the Jamboree Team runs it from.
 
-Everything it uses is on Cloudflare's free plan. No card needed: D1 for the
-counts, the sign-ups and the photo metadata, Workers KV for the image bytes.
+One Azure Function App on the Consumption plan, plus the storage account it
+needs anyway. At event scale it sits inside the free monthly execution grant
+and the storage costs pennies a month.
 
 ## What it stores
 
@@ -14,63 +15,111 @@ counts, the sign-ups and the photo metadata, Workers KV for the image bytes.
 | Sign-up | email, patrol, timestamp | anything else |
 | Patrol log | image bytes, patrol, status | name, email, device, location |
 
-Uploads are rate-limited per IP for an hour at a time. The IP is used as a
-short-lived counter key and is never written to the database.
+Photos live in a **private** blob container and are only ever served back
+through the function, so the wall switch and the deletion date actually bite —
+there is no public blob URL to leak past them.
 
 ## Deploy
 
 ```sh
-npm install -g wrangler
-wrangler login
-
-wrangler d1 create patrolfinder            # copy the id into wrangler.toml
-wrangler kv namespace create IMAGES        # copy the id into wrangler.toml
-wrangler d1 execute patrolfinder --remote --file=schema.sql
-
-wrangler secret put ADMIN_TOKEN            # any long random string
-wrangler deploy
+az login
+az account set --subscription "<the MK Scouts subscription>"
+cd backend
+./deploy.sh
 ```
 
-Then put the deployed URL into `API_BASE` at the top of `index.html`, with no
-trailing slash, and push to `main`.
+It prints an **admin token** once. Save it — it is the only way into the
+console, and it is not shown again. (`az functionapp config appsettings list`
+can read it back if you have Azure access.)
 
-Set `REUNION_ENDS` in `wrangler.toml` and in `index.html` to the same date.
-The app shows people the deletion date it computes from that value, so if the
-two disagree the app is telling people something the server will not do.
+Then put the printed URL into `API_BASE` at the top of the script in
+`index.html`, with no trailing slash, and push to `main`.
+
+Later code changes: `./deploy.sh --code-only`.
+
+Overridable with environment variables: `RG`, `LOCATION`, `APP`, `STORAGE`,
+`REUNION_ENDS`, `ALLOWED_ORIGIN`, `ADMIN_TOKEN`.
+
+`REUNION_ENDS` must match the value in `index.html`. The app shows people the
+deletion date it computes from that value, so if the two disagree the app is
+telling people something the server will not do.
+
+## The console
+
+`https://<app>.azurewebsites.net/admin`, served by the API itself. Paste the
+admin token once and the browser remembers it. It works on a phone, which is
+where it will actually be used.
+
+**Switches.** Each takes effect on the next page load for everyone:
+
+| Switch | Off means |
+|---|---|
+| Patrol wall | the wall is hidden everywhere and the pictures stop being served |
+| Adding to the wall | the wall stays visible but nobody can add to it |
+| Patrol cards and photo overlay | the card studio disappears from the result screen |
+| Check cards before they go up | *off* for a private event: cards appear straight away. On holds every upload for the team |
+
+The app keeps the last known answer, so a phone with no signal shows the state
+it last saw rather than a blank screen. All three default to on, so an
+unreachable API never accidentally hides the thing.
+
+**Reported cards.** Anyone can report a card from the wall. It comes off
+immediately, before any human sees the report, and lands at the top of the
+console. From there: *Put back*, *Take down* (keeps the file, reversible), or
+*Delete* (gone).
+
+**Numbers.** The tally, the sign-up count, how many cards are up, and a CSV of
+the sign-up list.
+
+**Delete everything.** Every photo, now, behind a typed confirmation.
 
 ## Endpoints
 
+Public:
+
 | Method | Path | |
 |---|---|---|
+| GET | `/config` | which features are switched on |
 | GET | `/tally` | the four counts |
 | POST | `/tally` | `{patrol}` — increment |
 | POST | `/email` | `{email, patrol}` |
-| GET | `/photos` | approved cards |
-| POST | `/photos` | multipart `patrol` + `photo` — goes into the queue |
-| GET | `/photo/:id` | image bytes, approved only |
+| GET | `/photos` | cards on the wall |
+| POST | `/photos` | multipart `patrol` + `photo` |
+| GET | `/photo/:id` | image bytes |
 | POST | `/report` | `{id}` — pulls a card off the wall |
 
-## Running the wall at Reunion
+Behind `Authorization: Bearer <ADMIN_TOKEN>`:
 
-Nothing appears publicly until someone releases it. With `ADMIN_TOKEN` in
-`$T` and the Worker URL in `$API`:
-
-```sh
-curl -H "Authorization: Bearer $T" $API/admin/pending
-curl -H "Authorization: Bearer $T" -H 'content-type: application/json' \
-     -d '{"id":"..."}' $API/admin/approve
-curl -H "Authorization: Bearer $T" -H 'content-type: application/json' \
-     -d '{"id":"..."}' $API/admin/hide      # also deletes the bytes
-```
-
-`GET /admin/photo/:id` shows a pending card so you can look before releasing it.
-
-A reported card is pulled off the wall the moment anyone taps Report, before
-any human sees the report. Releasing it again is a deliberate act.
+| Method | Path | |
+|---|---|---|
+| GET | `/admin` | the console (no token needed to load the page itself) |
+| GET/POST | `/admin/config` | read or change the switches |
+| GET | `/admin/photos` | every card and its status |
+| GET | `/admin/photo/:id` | bytes for a card that is not on the wall |
+| POST | `/admin/approve` `/admin/hide` `/admin/delete` | `{id}` |
+| GET | `/admin/stats` | counts and sign-up total |
+| GET | `/admin/signups.csv` | the sign-up list |
+| POST | `/admin/purge` | delete every photo now |
 
 ## Deletion
 
-`POST /admin/purge` deletes every photo immediately. Otherwise the daily cron
-does it once `REUNION_ENDS` + 7 days has passed, the KV entries carry an
-expiry set to the same moment, and every read checks the cutoff. Three
-independent belts, because the app promises people a date.
+The app promises people a date, so it is kept three ways rather than one:
+
+1. a daily timer sweeps the log once the cutoff has passed;
+2. every read checks the cutoff, so nothing is served after the date even if
+   the sweep has not run;
+3. the first request to arrive after the cutoff kicks off a sweep itself.
+
+Plus **Delete everything** in the console for right now.
+
+## Running it locally
+
+```sh
+npm install
+npm install -g azure-functions-core-tools@4 --unsafe-perm true
+echo '{"IsEncrypted":false,"Values":{"AzureWebJobsStorage":"UseDevelopmentStorage=true","FUNCTIONS_WORKER_RUNTIME":"node","ADMIN_TOKEN":"local-dev-token","ALLOWED_ORIGIN":"*"}}' > local.settings.json
+func start
+```
+
+Needs Azurite for the storage emulator (`npm install -g azurite`, then
+`azurite` in another terminal).

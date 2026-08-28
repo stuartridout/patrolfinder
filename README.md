@@ -11,7 +11,7 @@ Live site: **https://wsjpatrol.com** (also served from https://stuartridout.gith
 | `index.html` | the whole app: quiz, result, patrol card studio, patrol log |
 | `manifest.webmanifest`, `sw.js`, `icons/` | the PWA — installable, and the quiz runs with no signal |
 | `CNAME` | the custom domain, republished on every deploy |
-| `backend/` | the Cloudflare Worker behind the tally, sign-ups and the patrol log |
+| `backend/` | the Azure Function App behind the tally, sign-ups, the patrol log and the team's console |
 
 `.github/workflows/pages.yml` republishes the site to `gh-pages` on every push to `main`. Edit, merge to `main`, and the site updates itself. The CDN caches for about ten minutes.
 
@@ -25,11 +25,11 @@ After the result you can build a card to post: a profile picture, a 4:5 Instagra
 
 A public wall of cards people chose to share. Three rules, enforced in `backend/worker.js` rather than promised in a policy:
 
-1. Nothing appears publicly until a human on the Jamboree Team releases it.
-2. Anyone can report a card, and it comes off the wall immediately.
-3. Everything is deleted seven days after Gilwell Reunion. The cron sweeps it, the stored bytes carry an expiry set to the same moment, and every read filters on the cutoff.
+1. Anyone can report a card, and it comes off the wall immediately, before any human sees the report.
+2. Everything is deleted seven days after Gilwell Reunion. A daily timer sweeps it, every read checks the cutoff, and the first request after the cutoff sweeps too.
+3. Reunion is a private event, so cards go up as soon as they are uploaded. Flip **Check cards before they go up** in the console and every upload waits for the team instead.
 
-`REUNION_ENDS` must match in `index.html` and `backend/wrangler.toml` — the app shows people the deletion date it works out from that value.
+`REUNION_ENDS` must match in `index.html` and the Function App's settings — the app shows people the deletion date it works out from that value.
 
 ## Switching things on
 
@@ -37,11 +37,28 @@ Three constants at the top of the script in `index.html`. Any of them can stay e
 
 | | |
 |---|---|
-| `API_BASE` | the Worker URL. Turns on the tally, email capture and the patrol log |
-| `EMAIL_ENDPOINT` | a plain form service for email only, if the Worker isn't up yet |
+| `API_BASE` | the Function App URL. Turns on the tally, email capture and the patrol log |
+| `EMAIL_ENDPOINT` | a plain form service for email only, if the API isn't up yet |
 | `REUNION_ENDS` | last day of Reunion, ISO. Photos go seven days later |
 
-See `backend/README.md` to deploy the Worker.
+See `backend/README.md` to deploy it: `az login`, pick the subscription, `./deploy.sh`.
+
+## Switching things off, mid-event
+
+The Jamboree Team's console lives at `<api>/admin`, behind a token. Four
+switches, each taking effect on the next page load for everyone:
+
+- **Patrol wall** — hides the wall everywhere and stops serving the pictures
+- **Adding to the wall** — the wall stays, nobody can add to it
+- **Patrol cards and photo overlay** — removes the card studio from the result
+- **Check cards before they go up** — off for a private event; on holds every upload
+
+The console also lists reported cards for review, shows the tally and sign-up
+count, exports the sign-ups as CSV, and can delete every photo on the spot.
+
+The app remembers the last state it saw, so a phone with no signal shows what
+it last knew, and everything defaults to on, so an unreachable API never
+accidentally hides a feature.
 
 ## DNS
 
