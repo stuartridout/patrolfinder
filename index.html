@@ -70,14 +70,15 @@
   body.quiz .mast,body.result-mode .mast{display:none}
 
   /* torn sky band, anchored safely below the masthead */
+  /* A plain horizon. The torn, rotated edges this used to have wandered
+     across the call to action and the postmark at desktop widths, which read
+     as a mistake rather than as texture. */
   .blob{
     position:fixed;z-index:0;background:var(--sky);opacity:.5;pointer-events:none;
-    top:150px;left:-6vw;right:-6vw;height:64vh;
-    clip-path:polygon(1% 4%,16% 2%,38% 3%,61% 0%,82% 2%,100% 1%,99% 54%,100% 92%,79% 97%,56% 99%,31% 95%,9% 99%,0 94%);
-    transform:rotate(-1.4deg);
+    top:150px;left:0;right:0;bottom:0;
     transition:opacity .5s ease;
   }
-  body.quiz .blob{top:90px;height:70vh}
+  body.quiz .blob{top:90px}
   body.result-mode .blob{opacity:0}
 
   .ribbon{
@@ -256,7 +257,11 @@
     .eyebrow{font-size:.85rem}
     .mast .wsj{width:300px}
     .mast .fleur{height:46px}
-    .blob{top:150px;height:62vh}
+    /* No bottom edge at desktop widths. The band is anchored to the viewport
+       and the content is centred in it, so any fixed height eventually draws a
+       horizon straight through the call to action or the postmark. One clean
+       line at the top, sky the rest of the way down. */
+    .blob{top:150px;height:auto;bottom:0}
     .ribbon{left:40px;width:26px}
     .wrap{padding:28px 32px 44px}
     body:not(.quiz):not(.result-mode) .wrap{max-width:1040px}
@@ -289,7 +294,7 @@
     .intro .btn.primary{max-width:330px}
     .intro .microcopy{text-align:left}
 
-    body.quiz .blob{top:100px;height:64vh}
+    body.quiz .blob{top:100px;height:auto;bottom:0}
     body.quiz .screen{justify-content:flex-start}
     .qmid{flex:0 0 auto;padding:96px 0 8px}
     .prompt{font-size:2rem;margin-bottom:24px}
@@ -446,14 +451,6 @@
     animation:fadeup .25s ease both;
   }
   .toast.bad{background:var(--red-ink)}
-  .installbtn{
-    display:none;align-items:center;gap:8px;margin-top:12px;
-    min-height:44px;padding:10px 16px;cursor:pointer;
-    font-family:var(--sans);font-size:.82rem;font-weight:800;
-    background:transparent;color:inherit;border:2px solid currentColor;border-radius:99px;
-    opacity:.85;
-  }
-  .installbtn.on{display:inline-flex}
   .linkbtn{
     background:none;border:0;padding:10px 0;min-height:44px;cursor:pointer;
     font-family:var(--sans);font-size:.82rem;font-weight:800;color:inherit;
@@ -1465,33 +1462,11 @@ async function reportPhoto(id, cardEl){
 
 /* ============================================================
    PWA
+   The app stays installable - manifest, icons, offline service
+   worker - but says nothing about it. Browsers offer "Add to home
+   screen" in their own menu, and a button of ours competing with
+   that is one more thing on the screen at a busy stand.
    ============================================================ */
-let deferredInstall = null;
-
-window.addEventListener("beforeinstallprompt", (e)=>{
-  e.preventDefault();
-  deferredInstall = e;
-  document.querySelectorAll(".installbtn").forEach(b => b.classList.add("on"));
-});
-
-window.addEventListener("appinstalled", ()=>{
-  deferredInstall = null;
-  document.querySelectorAll(".installbtn").forEach(b => b.classList.remove("on"));
-});
-
-function wireInstall(){
-  const btn = document.querySelector(".installbtn");
-  if(!btn) return;
-  if(deferredInstall) btn.classList.add("on");
-  btn.addEventListener("click", async ()=>{
-    if(!deferredInstall) return;
-    deferredInstall.prompt();
-    await deferredInstall.userChoice;
-    deferredInstall = null;
-    btn.classList.remove("on");
-  });
-}
-
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   window.addEventListener("load", ()=>{
     navigator.serviceWorker.register("sw.js").catch(()=>{});
@@ -1523,14 +1498,12 @@ function renderIntro(){
         <p class="tiny microcopy">Seven questions &middot; about 90 seconds</p>
         <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;margin-top:4px">
           ${API_BASE ? `<button class="linkbtn" id="logBtn" data-needs="wall">See the patrol log</button>` : ""}
-          <button class="installbtn" id="installBtn" type="button">&#8595;&nbsp; Add to home screen</button>
         </div>
       </div>
     </div>`;
   document.getElementById("startBtn").addEventListener("click", startQuiz);
   const lb = document.getElementById("logBtn");
   if(lb) lb.addEventListener("click", ()=>renderLog(null));
-  wireInstall();
   applyFlags();
 
   /* The count only ever appears once the API has answered. */
@@ -1614,7 +1587,6 @@ function renderResult(forced){
           <button class="btn" id="shareBtn">Share my patrol</button>
           <button class="btn" id="againBtn">Start again</button>
         </div>
-        <button class="installbtn" id="installBtn" type="button" style="margin-left:auto;margin-right:auto">&#8595;&nbsp; Add to home screen</button>
         <p class="history">Real patrol, real names, real colour. The personalities are just for fun. BP mixed everyone up on purpose.</p>
       </div>
     </div>`;
@@ -1623,7 +1595,6 @@ function renderResult(forced){
   document.getElementById("emailBtn").addEventListener("click", ()=>submitEmail(id));
   document.getElementById("emailIn").addEventListener("keydown", (ev)=>{ if(ev.key==="Enter") submitEmail(id); });
   document.getElementById("shareBtn").addEventListener("click", (e)=>sharePatrol(id, e.currentTarget));
-  wireInstall();
   applyFlags();
 
   /* Count the outcome, then show how the camp is splitting. */
@@ -1791,7 +1762,7 @@ async function renderLog(fromPatrol){
   document.body.className = "";
   app.innerHTML = `
     <div class="screen">
-      <p class="eyebrow">The wall at the UK Pavilion</p>
+      <p class="eyebrow">The wall at Gilwell Reunion</p>
       <h1 class="banner">Patrol log</h1>
       <p class="sub">Cards people chose to share at Gilwell Reunion. Everything here comes down on ${esc(purgeDateText())}.</p>
       <div class="logfilter" role="group" aria-label="Filter by patrol">
