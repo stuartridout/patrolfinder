@@ -150,12 +150,17 @@ const ADMIN_HTML = `<!DOCTYPE html>
     </div>
 
     <div class="card danger-zone">
-      <h2>Delete everything</h2>
-      <p class="hint">Every photo, now, rather than waiting for the sweep. Sign-ups and the tally are untouched. This cannot be undone.</p>
+      <h2>Start clean</h2>
+      <p class="hint">For clearing up after testing, or for starting Reunion morning with the day's own numbers. None of it can be undone.</p>
       <div class="row" style="flex-wrap:nowrap">
-        <input type="text" id="purgeConfirm" placeholder="Type DELETE to arm" aria-label="Type DELETE to arm">
+        <input type="text" id="purgeConfirm" placeholder="Type CLEAR to arm" aria-label="Type CLEAR to arm">
       </div>
-      <div class="row"><button class="danger" id="purgeBtn" disabled>Delete every photo</button></div>
+      <div class="row">
+        <button class="danger arm" id="purgePhotos" disabled>Delete every photo</button>
+        <button class="danger arm" id="purgeTally" disabled>Reset the counts</button>
+        <button class="danger arm" id="purgeSignups" disabled>Clear the sign-ups</button>
+      </div>
+      <div class="row"><button class="danger arm" id="purgeAll" disabled>All three</button></div>
       <p class="note" id="purgeNote"></p>
     </div>
 
@@ -441,23 +446,35 @@ $("csvBtn").addEventListener("click", async function(){
 /* ---------------- danger ---------------- */
 
 $("purgeConfirm").addEventListener("input", function(){
-  $("purgeBtn").disabled = this.value.trim().toUpperCase() !== "DELETE";
+  var armed = this.value.trim().toUpperCase() === "CLEAR";
+  document.querySelectorAll("button.arm").forEach(function(b){ b.disabled = !armed; });
 });
 
-$("purgeBtn").addEventListener("click", async function(){
-  if(!confirm("Delete every photo in the patrol log? This cannot be undone.")) return;
-  this.disabled = true;
-  try{
-    var res = await api("/console/purge", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
-    var data = await res.json();
-    note($("purgeNote"), "Deleted " + (data.deleted || 0) + " photo(s).", "ok");
-    $("purgeConfirm").value = "";
-    await refresh();
-  }catch(e){
-    note($("purgeNote"), "That didn't work.", "err");
-    this.disabled = false;
-  }
-});
+function wipe(id, what, label){
+  $(id).addEventListener("click", async function(){
+    if(!confirm(label + " This cannot be undone.")) return;
+    document.querySelectorAll("button.arm").forEach(function(b){ b.disabled = true; });
+    try{
+      var res = await api("/console/reset", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({what: what})
+      });
+      if(!res.ok) throw new Error("failed");
+      note($("purgeNote"), "Done.", "ok");
+      $("purgeConfirm").value = "";
+      await refresh();
+    }catch(e){
+      note($("purgeNote"), "That didn't work.", "err");
+      document.querySelectorAll("button.arm").forEach(function(b){ b.disabled = false; });
+    }
+  });
+}
+
+wipe("purgePhotos",  "photos",  "Delete every photo in the patrol log?");
+wipe("purgeTally",   "tally",   "Reset all four patrol counts to zero?");
+wipe("purgeSignups", "signups", "Delete every email sign-up?");
+wipe("purgeAll",     "all",     "Delete every photo, every sign-up, and reset the counts?");
 
 /* ---------------- boot ---------------- */
 

@@ -54,7 +54,7 @@ switches, each taking effect on the next page load for everyone:
 - **Check cards before they go up** — off for a private event; on holds every upload
 
 The console also lists reported cards for review, shows the tally and sign-up
-count, exports the sign-ups as CSV, and can delete every photo on the spot.
+count, exports the sign-ups as CSV, and can start clean on the spot: delete every photo, reset the counts, clear the sign-ups, or all three.
 
 The app remembers the last state it saw, so a phone with no signal shows what
 it last knew, and everything defaults to on, so an unreachable API never

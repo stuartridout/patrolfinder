@@ -23,6 +23,7 @@
  *   GET  /console/stats        counts and sign-up total
  *   GET  /console/signups.csv  the sign-up list
  *   POST /console/purge        delete every photo now
+ *   POST /console/reset        {what: tally|signups|photos|all} start clean
  *
  * Not /admin: the Functions host reserves /admin/* for its own API, so a
  * request there is answered with a 404 before it ever reaches this function.
@@ -295,6 +296,18 @@ async function handler(request, context){
       if(path === "/console/purge"){
         const n = await store.purgeAllPhotos();
         return json({ok: true, deleted: n});
+      }
+
+      /* Clearing up after a test run, or starting the day clean. */
+      if(path === "/console/reset"){
+        const what = String(body.what || "");
+        if(what === "tally" || what === "all") await store.resetTally();
+        if(what === "signups" || what === "all") await store.clearSignups();
+        if(what === "photos" || what === "all") await store.purgeAllPhotos();
+        if(!["tally", "signups", "photos", "all"].includes(what)){
+          return json({error: "what must be tally, signups, photos or all"}, 400);
+        }
+        return json({ok: true, reset: what});
       }
     }
 

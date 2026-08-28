@@ -117,7 +117,10 @@ console. From there: *Put back*, *Take down* (keeps the file, reversible), or
 **Numbers.** The tally, the sign-up count, how many cards are up, and a CSV of
 the sign-up list.
 
-**Delete everything.** Every photo, now, behind a typed confirmation.
+**Start clean.** Behind a typed confirmation: delete every photo, reset the
+four counts, clear the sign-up list, or all three. Use it to clear up after
+testing, and again on Reunion morning so the numbers people see are the day's
+own.
 
 ## Endpoints
 
@@ -148,6 +151,7 @@ before a request reaches the app.
 | GET | `/console/stats` | counts and sign-up total |
 | GET | `/console/signups.csv` | the sign-up list |
 | POST | `/console/purge` | delete every photo now |
+| POST | `/console/reset` | `{what: tally\|signups\|photos\|all}` — start clean |
 
 ## Deletion
 
