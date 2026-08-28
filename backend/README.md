@@ -61,6 +61,13 @@ deployment endpoint answers 503 indefinitely, and the CLI itself crashes with a
 JSONDecodeError when it tries to read app settings back from SCM and gets an
 HTML error page. Run-from-package never touches SCM.
 
+Setting `WEBSITE_RUN_FROM_PACKAGE` is not on its own enough: the platform also
+has to be told what triggers the package contains, which `config-zip` would
+have done for you. Without that POST to `syncfunctiontriggers` the scale
+controller has nothing to start, `az functionapp function list` answers Bad
+Request, and the app returns 503 to everything however long you wait. The
+script does it and retries.
+
 Old packages stay in the container. Delete them when you like; the app only
 ever reads the one the setting points at.
 

@@ -147,6 +147,22 @@ az functionapp config appsettings set --name "$APP" --resource-group "$RG" \
 
 say "Restarting"
 az functionapp restart --name "$APP" --resource-group "$RG" --output none
+sleep 15
+
+say "Syncing triggers"
+# Setting WEBSITE_RUN_FROM_PACKAGE by hand does not tell the platform what
+# triggers the package contains. config-zip would have done this for us. Without
+# it the scale controller has nothing to start, function list answers Bad
+# Request, and every request to the app comes back 503 forever.
+SYNC_URI="https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.Web/sites/$APP/syncfunctiontriggers?api-version=2022-03-01"
+for attempt in 1 2 3 4; do
+  if az rest --method post --uri "$SYNC_URI" --output none 2>/dev/null; then
+    echo "  triggers synced"
+    break
+  fi
+  echo "  sync attempt $attempt did not take, waiting 20s"
+  sleep 20
+done
 
 HOST=$(az functionapp show --name "$APP" --resource-group "$RG" --query defaultHostName -o tsv)
 
