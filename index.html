@@ -156,9 +156,19 @@
   /* 120 years postmark */
   .postmark{color:var(--red);opacity:.95;pointer-events:none}
   .postmark svg{width:100%;height:auto;display:block}
-  .stampzone{flex:1;display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:0;max-height:20vh;padding:6px 24px 6px 6px}
-  .stampnote{max-width:11.5rem;font-size:.82rem;line-height:1.5;font-weight:600;opacity:.85}
-  .postmark-intro{width:clamp(120px,36vw,170px);transform:rotate(-8deg)}
+  /* The postmark sits beside the heading rather than in a band of its own
+     further down. That is the single biggest saving in getting the whole
+     intro onto one screen: it fills the space the rotated banner leaves to
+     its right instead of taking a row to itself. */
+  .introhead{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  /* The banner no longer owns the full width, so it scales to what the
+     postmark leaves it - at a fixed 1.85rem "WHICH PATROL" broke onto its own
+     line and gave back the height the postmark had just saved. */
+  .introhead .banner{flex:0 1 auto;font-size:clamp(1.3rem,6.4vw,1.85rem)}
+  .stampnote{font-size:.82rem;line-height:1.5;font-weight:600;opacity:.85;margin-top:10px}
+  /* Sized so the banner always keeps "WHICH PATROL" on one line: any wider
+     and it breaks to three lines and gives back the height this saved. */
+  .postmark-intro{flex:none;width:clamp(78px,23vw,108px);transform:rotate(-8deg);margin-top:12px}
   .postmark-result{position:absolute;top:0;right:-4px;width:84px;transform:rotate(8deg)}
   body.result-mode .postmark{color:rgba(255,255,255,.9)}
   body.result-curlews .postmark{color:rgba(27,53,121,.85)}
@@ -300,9 +310,32 @@
 
   /* Two ways in rather than one button. They are equal choices, so they get
      equal weight: stacked on a phone, side by side once there is room. */
-  .erahead{text-align:center;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.75;margin-bottom:2px}
-  .erapick .btn.primary{display:flex;flex-direction:column;gap:3px;padding:13px 16px}
-  .erasub{font-size:.72rem;font-weight:700;letter-spacing:.01em;text-transform:none;opacity:.85}
+  /* Two tall blocks side by side rather than a stack: equal choices, read in
+     one glance, and one row of height instead of two. */
+  .erahead{text-align:center;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.75;margin-bottom:6px}
+  .erapick{display:flex;gap:10px}
+  .erapick .btn.primary{
+    flex:1 1 0;min-width:0;min-height:104px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    padding:14px 10px;font-size:1.02rem;line-height:1.2;border-radius:18px;
+  }
+  .erasub{font-size:.7rem;font-weight:700;letter-spacing:.01em;text-transform:none;opacity:.85;line-height:1.3}
+  .ibottom #logBtn{margin-top:10px;text-align:center}
+
+  /* Short phones - an SE, or anything in landscape-ish - need the slack
+     taken out of the decorative parts rather than the buttons. */
+  @media (max-height:740px){
+    .intro .tile .head{height:46px}
+    .intro .patrolrow{margin:6px 0 2px}
+    .intro .banner{margin:8px 0 4px}
+    .intro .postmark-intro{width:clamp(70px,22vw,92px);margin-top:8px}
+    .intro .sub{font-size:.95rem;line-height:1.4;margin-top:8px}
+    .intro .stampnote{font-size:.74rem;line-height:1.4;margin-top:4px}
+    .intro .erahead{margin-bottom:4px}
+    .erapick .btn.primary{min-height:84px}
+    .intro .microcopy{margin-top:6px}
+    .ibottom #logBtn{margin-top:8px;padding:13px 16px}
+  }
 
   .ibottom{margin-top:auto}
   .microcopy{text-align:center;margin-top:10px}
@@ -331,23 +364,28 @@
       align-content:center;
       grid-template-areas:
         "eyebrow tiles"
-        "banner tiles"
+        "head tiles"
         "sub tiles"
-        "cta stamp";
+        "note tiles"
+        "cta cta";
     }
     .intro .eyebrow{grid-area:eyebrow;align-self:end;margin-top:0}
-    .intro .banner{grid-area:banner;justify-self:start;font-size:2.8rem;padding:18px 28px;margin:16px 0 10px}
+    .intro .introhead{grid-area:head;align-items:center}
+    /* Three lines at desktop, and deliberately so: the column the banner
+       shares with the postmark is only wide enough for two if the hero drops
+       to about 2.2rem, which is not a hero any more. */
+    .intro .banner{font-size:2.8rem;padding:18px 28px;margin:16px 0 10px}
     .intro .sub{grid-area:sub;align-self:start;font-size:1.2rem;max-width:32rem;margin-top:12px}
     .intro .patrolrow{grid-area:tiles;display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:0;align-self:start}
     .intro .tile{padding:22px 8px 0;border-radius:18px}
     .intro .tile .head{height:106px;margin-bottom:10px}
     .intro .tile .tiny{font-size:.72rem}
     .intro .knot{width:24px;height:22px;margin:10px auto -11px}
-    .intro .stampzone{grid-area:stamp;justify-content:center;align-items:center;gap:24px;max-height:none;padding:24px 0 0}
-    .intro .stampnote{max-width:13rem;font-size:.88rem}
-    .intro .postmark-intro{width:176px}
+    .intro .stampnote{grid-area:note;max-width:26rem;font-size:.88rem;margin-top:14px}
+    .intro .postmark-intro{width:128px;margin-top:0}
     .intro .ibottom{grid-area:cta;margin-top:26px;align-self:start}
-    .intro .btn.primary{max-width:330px}
+    .intro .erapick{max-width:560px}
+    .intro #logBtn{max-width:560px}
     .intro .microcopy{text-align:left}
 
     body.quiz .blob{top:100px;height:auto;bottom:0}
@@ -754,7 +792,7 @@ const WATER_QUESTION = {
 const ERAS = {
   "1907": {
     label:"Brownsea, 1907",
-    sub:"BP's camp, the first one",
+    sub:"BP's first camp",
     tag:"Brownsea 1907",
     questions:[
       { weight:2,
@@ -811,7 +849,7 @@ const ERAS = {
 
   "today": {
     label:"Camp, today",
-    sub:"The same seven questions, now",
+    sub:"A camp this year",
     tag:"Camp today",
     questions:[
       { weight:2,
@@ -1956,28 +1994,28 @@ function renderIntro(){
     <div class="screen intro">
       <p class="eyebrow">Brownsea Island 1907 &rarr; Gda&nacute;sk 2027</p>
       ${friend ? `<p class="sub" style="margin-top:10px">Someone shared their patrol with you. They're <strong>${esc(friend.one)}</strong> &mdash; ${esc(friend.tagline.toLowerCase())}</p>` : ""}
-      <h1 class="banner">Which patrol<br>are you?</h1>
+      <div class="introhead">
+        <h1 class="banner">Which patrol<br>are you?</h1>
+        <div class="postmark postmark-intro">${POSTMARK}</div>
+      </div>
       <div class="patrolrow">
         <div class="tile"><span class="head head-wolves" aria-hidden="true"></span><p class="tiny">Wolves</p><div class="knot knot-wolves"></div></div>
         <div class="tile"><span class="head head-bulls" aria-hidden="true"></span><p class="tiny">Bulls</p><div class="knot knot-bulls"></div></div>
         <div class="tile"><span class="head head-curlews" aria-hidden="true"></span><p class="tiny">Curlews</p><div class="knot knot-curlews"></div></div>
         <div class="tile"><span class="head head-ravens" aria-hidden="true"></span><p class="tiny">Ravens</p><div class="knot knot-ravens"></div></div>
       </div>
-      <p class="sub">Twenty boys and four patrols started Scouting. Seven quick questions put you in one of them &mdash; on BP's camp in 1907, or on a camp this year.</p>
-      <p class="countline left" id="introCount"></p>
-      <div class="stampzone"><p class="stampnote">The camp ran 1 to 8 August 1907. The Jamboree lands 120 years later, to the week.</p><div class="postmark postmark-intro">${POSTMARK}</div></div>
+      <p class="sub">Twenty boys and four patrols started Scouting. Seven quick questions put you in one of them.</p>
+      <p class="stampnote">The camp ran 1 to 8 August 1907. The Jamboree lands 120 years later, to the week.</p>
       <div class="ibottom">
-        <p class="tiny erahead">Pick your camp</p>
-        <div class="stack erapick">
+        <p class="tiny erahead">Pick your questions</p>
+        <div class="erapick">
           ${ERA_IDS.map(k=>`
             <button class="btn primary" data-era="${k}">
               ${esc(ERAS[k].label)}<span class="erasub">${esc(ERAS[k].sub)}</span>
             </button>`).join("")}
         </div>
         <p class="tiny microcopy">The same seven questions, 120 years apart &middot; about 90 seconds</p>
-        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;margin-top:4px">
-          ${API_BASE ? `<button class="linkbtn" id="logBtn" data-needs="wall">See the patrol log</button>` : ""}
-        </div>
+        ${API_BASE ? `<button class="btn" id="logBtn" data-needs="wall">See the patrol log</button>` : ""}
       </div>
     </div>`;
   app.querySelectorAll(".erapick button").forEach(b=>{
@@ -1986,15 +2024,6 @@ function renderIntro(){
   const lb = document.getElementById("logBtn");
   if(lb) lb.addEventListener("click", ()=>renderLog(null));
   applyFlags();
-
-  /* The count only ever appears once the API has answered. */
-  loadTally().then(()=>{
-    const el = document.getElementById("introCount");
-    const total = tallyTotal();
-    if(el && total > 0){
-      el.textContent = `${total.toLocaleString("en-GB")} ${total === 1 ? "person has" : "people have"} found their patrol.`;
-    }
-  });
 }
 
 function renderQuestion(){
