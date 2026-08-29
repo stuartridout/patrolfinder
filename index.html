@@ -455,6 +455,34 @@
     text-transform:uppercase;color:#fff;background:rgba(27,53,121,.82);
   }
   .reportbtn:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+  /* Pull the wall down to refresh it. The browser's own pull-to-refresh
+     reloads the page, which on a screen that is a render rather than a URL
+     lands you back on the intro, so it is turned off while the wall is up. */
+  body.log{overscroll-behavior-y:contain}
+  /* Sits in the gap the pull opens up, and is exactly as tall as that gap, so
+     the label stays centred in it however far you pull. */
+  .ptr{
+    position:absolute;left:0;right:0;top:12px;z-index:0;pointer-events:none;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;gap:9px;height:0;
+    font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--navy);opacity:0;
+  }
+  .ptr i{
+    flex:none;width:15px;height:15px;border-radius:50%;
+    border:2.5px solid currentColor;border-top-color:transparent;
+  }
+  .ptr.spin i{animation:ptrspin .7s linear infinite}
+  @keyframes ptrspin{to{transform:rotate(360deg)}}
+  /* The pull moves this inner wrapper, not .screen: .screen carries a fadeup
+     animation with fill mode both, and a filled animation beats an inline
+     style, so a transform set there is silently ignored. */
+  .pullwrap{flex:1;display:flex;flex-direction:column}
+  .pullwrap.snap{transition:transform .22s ease}
+  .logstatus{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    font-size:.72rem;font-weight:700;opacity:.85;
+  }
+  .logstatus .linkbtn{font-size:.72rem}
   .logempty{margin-top:18px;font-size:.95rem;font-weight:600;line-height:1.5;opacity:.9}
   .reportlink{display:inline-block;margin-top:16px;font-size:.72rem;font-weight:700;
     color:var(--navy);opacity:.8}
@@ -565,6 +593,8 @@
   }
 
   @media (prefers-reduced-motion:reduce){
+    .ptr.spin i{animation:none}
+    .pullwrap.snap{transition:none}
     *,*::before,*::after{animation:none!important;transition:none!important}
   }
 </style>
@@ -2180,9 +2210,11 @@ async function renderLog(fromPatrol){
     return;
   }
   toTop();
-  document.body.className = "";
+  document.body.className = "log";
   app.innerHTML = `
-    <div class="screen">
+    <div class="ptr" id="ptr" aria-hidden="true"><i></i><span>Pull to refresh</span></div>
+    <div class="screen logscreen">
+     <div class="pullwrap" id="pullWrap">
       <p class="eyebrow">The wall at Gilwell Reunion</p>
       <h1 class="banner">Patrol log</h1>
       <p class="sub">Cards people chose to share at Gilwell Reunion. Everything here comes down on ${esc(purgeDateText())}.</p>
@@ -2190,11 +2222,16 @@ async function renderLog(fromPatrol){
         <button data-p="all" aria-pressed="true">All</button>
         ${PATROL_IDS.map(p=>`<button data-p="${p}" aria-pressed="false">${esc(PATROLS[p].name)}</button>`).join("")}
       </div>
-      <div id="logBody"><p class="logempty">Loading the wall...</p></div>
+      <div class="logstatus">
+        <span id="logStamp"></span>
+        <button class="linkbtn" id="refreshBtn">Refresh</button>
+      </div>
+      <div id="logBody" aria-busy="true"><p class="logempty">Loading the wall...</p></div>
       <p class="reportlink">Something on here that shouldn't be? Tell the Jamboree Team in the International Tent, or tap Report on the card, and it comes down.</p>
       <div class="stack">
         <button class="btn primary" id="backBtn">${fromPatrol ? "Back to my card" : "Find my patrol"}</button>
       </div>
+     </div>
     </div>`;
 
   const keep = studio && fromPatrol && studio.patrol === fromPatrol ? studio : null;
@@ -2208,6 +2245,7 @@ async function renderLog(fromPatrol){
   function paint(){
     const body = document.getElementById("logBody");
     if(!body) return;
+    body.setAttribute("aria-busy", "false");
     if(items === null){
       body.innerHTML = `<p class="logempty">The patrol log isn't switched on yet. Come and see the wall at the Pavilion.</p>`;
       return;
@@ -2240,14 +2278,86 @@ async function renderLog(fromPatrol){
     });
   });
 
-  if(apiUrl("")){
+  /* A refresh that fails keeps whatever is already on the screen: at a stand
+     with patchy signal, blanking the wall would be worse than showing a
+     slightly old one. */
+  async function load(){
+    if(!apiUrl("")){ items = null; return; }
     try{
-      const res = await fetch(apiUrl("/photos"), {headers:{"Accept":"application/json"}});
+      const res = await fetch(apiUrl("/photos"), {headers:{"Accept":"application/json"}, cache:"no-store"});
       const data = await res.json();
       items = Array.isArray(data) ? data : (data && data.items) || [];
-    }catch(_){ items = []; }
+    }catch(_){ items = items || []; }
   }
+
+  function stamp(){
+    const el = document.getElementById("logStamp");
+    if(!el) return;
+    el.textContent = items === null ? ""
+      : "Updated " + new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit"});
+  }
+
+  const screen = document.getElementById("pullWrap");
+  const ptr = document.getElementById("ptr");
+  const ptrText = ptr.querySelector("span");
+  const PULL_AT = 64, PULL_MAX = 96;
+  let pullFrom = null, pulled = 0, busy = false;
+
+  function showPull(px, msg){
+    pulled = px;
+    screen.style.transform = px ? `translateY(${px}px)` : "";
+    ptr.style.height = px + "px";
+    ptr.style.opacity = px ? String(Math.min(1, px/PULL_AT)) : "0";
+    if(msg) ptrText.textContent = msg;
+  }
+
+  async function refresh(){
+    if(busy) return;
+    busy = true;
+    screen.classList.add("snap");
+    ptr.classList.add("spin");
+    showPull(PULL_AT, "Refreshing");
+    document.getElementById("logBody").setAttribute("aria-busy", "true");
+    await load();
+    paint();
+    stamp();
+    showPull(0);
+    ptr.classList.remove("spin");
+    setTimeout(()=>{ screen.classList.remove("snap"); busy = false; }, 240);
+  }
+
+  /* One finger, only from the very top, and only downwards - anything else is
+     an ordinary scroll and must be left alone. */
+  screen.addEventListener("touchstart", (e)=>{
+    if(busy || e.touches.length !== 1 || window.scrollY > 0) return;
+    pullFrom = e.touches[0].clientY;
+  }, {passive:true});
+
+  screen.addEventListener("touchmove", (e)=>{
+    if(pullFrom === null) return;
+    const dy = e.touches[0].clientY - pullFrom;
+    if(dy <= 0){ showPull(0); pullFrom = null; return; }
+    e.preventDefault();
+    const px = Math.min(PULL_MAX, dy*0.5);
+    showPull(px, px >= PULL_AT ? "Release to refresh" : "Pull to refresh");
+  }, {passive:false});
+
+  const letGo = ()=>{
+    if(pullFrom === null) return;
+    const go = pulled >= PULL_AT;
+    pullFrom = null;
+    if(go){ refresh(); }
+    else { screen.classList.add("snap"); showPull(0); setTimeout(()=>screen.classList.remove("snap"), 240); }
+  };
+  screen.addEventListener("touchend", letGo);
+  screen.addEventListener("touchcancel", letGo);
+
+  /* There is no pull on a laptop, and the wall is shown on one at the stand. */
+  document.getElementById("refreshBtn").addEventListener("click", refresh);
+
+  await load();
   paint();
+  stamp();
 }
 
 /* ============================================================
