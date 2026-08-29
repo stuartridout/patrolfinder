@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#FAF5E9">
-<title>Which patrol are you?</title>
-<meta name="description" content="Seven quick questions to find your 1907 Brownsea patrol. UK Pavilion, Poland 2027.">
-<meta property="og:title" content="Which patrol are you?">
-<meta property="og:description" content="Seven quick questions to find your 1907 Brownsea patrol. 120 years of Scouting. UK Pavilion, Poland 2027.">
+<title>WSJ 2027 UK — Which Brownsea Island patrol are you?</title>
+<meta name="description" content="Seven quick questions to find your 1907 Brownsea Island patrol. UK Pavilion at the 26th World Scout Jamboree, Poland 2027.">
+<meta property="og:title" content="WSJ 2027 UK — Which Brownsea Island patrol are you?">
+<meta property="og:description" content="Seven quick questions to find your 1907 Brownsea Island patrol. 120 years of Scouting. UK Pavilion at the 26th World Scout Jamboree, Poland 2027.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://wsjpatrol.com/">
 <meta property="og:image" content="https://wsjpatrol.com/icons/og-card.png">
@@ -23,7 +23,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Which patrol?">
+<meta name="apple-mobile-web-app-title" content="WSJ Patrol">
 <meta name="mobile-web-app-capable" content="yes">
 <style>
   :root{
@@ -45,6 +45,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html{height:100%}
   body{
+    position:relative;
     min-height:100vh;min-height:100dvh;
     font-family:var(--sans);
     background:var(--paper);
@@ -73,8 +74,10 @@
   /* A plain horizon. The torn, rotated edges this used to have wandered
      across the call to action and the postmark at desktop widths, which read
      as a mistake rather than as texture. */
+  /* Absolute, not fixed: the horizon belongs to the page and scrolls away with
+     everything above it. Fixed left it sliding across the content. */
   .blob{
-    position:fixed;z-index:0;background:var(--sky);opacity:.5;pointer-events:none;
+    position:absolute;z-index:0;background:var(--sky);opacity:.5;pointer-events:none;
     top:150px;left:0;right:0;bottom:0;
     transition:opacity .5s ease;
   }
@@ -82,7 +85,7 @@
   body.result-mode .blob{opacity:0}
 
   .ribbon{
-    position:fixed;top:0;left:22px;width:22px;height:14vh;z-index:2;
+    position:absolute;top:0;left:22px;width:22px;height:14vh;z-index:2;
     background:#fff;
     clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 14px),0 100%);
     display:none;
@@ -207,8 +210,12 @@
   @keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
   .tagline{font-family:var(--serif);font-size:1.25rem;font-weight:700;font-style:italic;line-height:1.35;margin-top:4px}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0;justify-content:center}
+  /* No opacity on any of the three result-screen labels below. Opacity on a
+     parent composites the whole subtree, so cream at .9 over Bulls green
+     lands at 4.46:1 and fails. They only ever sit on a patrol flood, where
+     the full-strength colour is the one that passes. */
   .chip{font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-    border:2px solid currentColor;border-radius:999px;padding:5px 11px;opacity:.9}
+    border:2px solid currentColor;border-radius:999px;padding:5px 11px}
   .card{background:#fff;color:var(--navy);border-radius:16px;
     padding:14px 16px;margin-top:16px;font-size:.95rem;line-height:1.5;text-align:left;width:100%}
   .card .fact{font-style:italic;opacity:.8;margin-top:8px}
@@ -230,11 +237,12 @@
   .emailrow input.bad{border-color:var(--red-ink)}
   .micro.err{color:var(--red-ink);opacity:1;font-weight:700}
   .micro.info{color:var(--navy);opacity:.95;font-weight:700}
-  .card .btn.go{
+  :is(.card,.cardcta,.wallcta) .btn.go{
     width:auto;margin:0;text-align:center;border-radius:999px;
     background:var(--red-ink);border-color:var(--red-ink);color:#fff;font-weight:800;padding:12px 16px;
   }
-  body.result-mode .card .btn.go,body.result-curlews .card .btn.go{
+  body.result-mode :is(.card,.cardcta,.wallcta) .btn.go,
+  body.result-curlews :is(.card,.cardcta,.wallcta) .btn.go{
     background:var(--red-ink);border-color:var(--red-ink);color:#fff;
   }
   .micro{font-size:.68rem;opacity:.78;margin-top:8px}
@@ -246,7 +254,7 @@
   .jlink:focus-visible{outline:3px solid var(--red);outline-offset:2px}
   .thanks{margin-top:12px;font-weight:800;color:var(--bulls)}
   .stack{display:flex;flex-direction:column;gap:10px;margin-top:16px}
-  .history{font-size:.7rem;line-height:1.45;opacity:.85;margin-top:14px}
+  .history{font-size:.7rem;line-height:1.45;margin-top:14px}
 
   .ibottom{margin-top:auto}
   .microcopy{text-align:center;margin-top:10px}
@@ -428,11 +436,16 @@
   .logcard .p-bulls{background:var(--bulls)}
   .logcard .p-curlews{background:var(--curlews);color:var(--navy)}
   .logcard .p-ravens{background:var(--ravens)}
+  /* The whole 44px box stays tappable; only the content box is painted, so
+     the pill reads as a small label rather than a lid over the corner of the
+     card. background-clip must come after the background shorthand, which
+     resets it. */
   .reportbtn{
-    position:absolute;right:2px;top:2px;min-height:44px;min-width:44px;padding:12px;cursor:pointer;
+    position:absolute;right:0;top:0;min-height:44px;min-width:44px;padding:13px 12px;cursor:pointer;
+    line-height:1;
+    font-family:var(--sans);font-size:.56rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:#fff;background:rgba(27,53,121,.78);border:0;border-radius:99px;
     background-clip:content-box;
-    font-family:var(--sans);font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
-    color:#fff;background:rgba(27,53,121,.86);border:0;border-radius:99px;
   }
   .reportbtn:focus-visible{outline:3px solid var(--red);outline-offset:2px}
   .logempty{margin-top:18px;font-size:.95rem;font-weight:600;line-height:1.5;opacity:.9}
@@ -454,19 +467,90 @@
   .linkbtn{
     background:none;border:0;padding:10px 0;min-height:44px;cursor:pointer;
     font-family:var(--sans);font-size:.82rem;font-weight:800;color:inherit;
-    text-decoration:underline;text-underline-offset:4px;opacity:.9;
+    text-decoration:underline;text-underline-offset:4px;
   }
   .linkbtn:focus-visible{outline:3px solid var(--red);outline-offset:3px}
 
-  /* Buttons sitting on a white card must not inherit the flood's
-     white-on-transparent treatment, or they vanish. */
-  body.result-mode .card .btn,body.result-curlews .card .btn{
+  /* ============================================================
+     ALMOST THERE — the beat before the reveal. Paper, never a patrol
+     colour: the flood would give the answer away.
+     ============================================================ */
+  .almost .sub{margin-top:14px}
+  .almost .ibottom{margin-top:auto}
+  .holding{
+    display:flex;align-items:center;gap:12px;margin-top:18px;
+    font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--navy);opacity:.8;
+  }
+  .holding i{flex:none;width:12px;height:12px;border-radius:50%;background:var(--red);
+    animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+
+  /* ============================================================
+     THE CARD CTA — the premium thing, sold with a picture of
+     itself rather than a line of text in a stack of buttons.
+     ============================================================ */
+  .cardcta{
+    background:#fff;color:var(--navy);border-radius:18px;
+    padding:18px 18px 20px;margin-top:20px;text-align:left;width:100%;
+    box-shadow:0 12px 34px rgba(0,0,0,.18);
+  }
+  .cardcta .eyebrow{color:var(--red-ink);opacity:1}
+  .cardcta h2{font-family:var(--serif);font-size:1.6rem;line-height:1.15;font-weight:700;margin:6px 0 10px}
+  .cardcta p{font-size:.95rem;line-height:1.5}
+  .ctapreview{display:flex;align-items:flex-end;gap:12px;margin:16px 0 4px;justify-content:center}
+  .ctapreview canvas{
+    width:132px;height:132px;border-radius:14px;display:block;
+    box-shadow:0 8px 20px rgba(0,0,0,.22);
+  }
+  .ghostcard{
+    border-radius:10px;border:2px dashed rgba(27,53,121,.3);
+    display:flex;align-items:flex-end;justify-content:center;
+    font-size:.58rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:#5A6A94;padding-bottom:6px;
+  }
+  .ghostcard.post{width:64px;height:80px}
+  .ghostcard.story{width:52px;height:92px}
+  .cardcta .btn.primary{margin-top:16px}
+  .quietrow{display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:center;margin-top:18px}
+
+  /* ============================================================
+     GET ON THE WALL — an invitation, not a consent form. The facts
+     are all still here; they are just not shouting.
+     ============================================================ */
+  .wallcta{background:#fff;color:var(--navy);border-radius:18px;padding:18px;margin-top:16px;
+    text-align:left;width:100%}
+  .wallcta h2{font-family:var(--serif);font-size:1.5rem;line-height:1.15;font-weight:700;margin:4px 0 8px}
+  .wallcta p{font-size:.95rem;line-height:1.5}
+  .wallstrip{display:flex;gap:8px;margin:14px 0 4px;overflow:hidden}
+  .wallstrip img,.wallstrip .ghost{
+    width:56px;height:56px;border-radius:10px;object-fit:cover;flex:none;
+    background:rgba(27,53,121,.08);
+  }
+  .wallstrip .ghost{border:2px dashed rgba(27,53,121,.25)}
+  .wallfacts{
+    display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;
+    font-size:.7rem;font-weight:800;letter-spacing:.04em;
+  }
+  .wallfacts span{
+    background:rgba(27,53,121,.07);border-radius:99px;padding:6px 11px;color:var(--navy);
+  }
+  .wallnote{font-size:.8rem;line-height:1.5;margin-top:12px;opacity:.85}
+
+  /* Buttons sitting on a white panel must not inherit the flood's
+     white-on-transparent treatment, or they vanish. Every white panel on the
+     result screen belongs in this list: .cardcta was added later and spent a
+     build with an invisible white pill on white because it was not. */
+  body.result-mode :is(.card,.cardcta,.wallcta) .btn,
+  body.result-curlews :is(.card,.cardcta,.wallcta) .btn{
     background:#fff;border-color:var(--sky-line);color:var(--navy);text-align:center;
   }
-  body.result-mode .card .btn.primary,body.result-curlews .card .btn.primary{
+  body.result-mode :is(.card,.cardcta,.wallcta) .btn.primary,
+  body.result-curlews :is(.card,.cardcta,.wallcta) .btn.primary{
     background:var(--navy);border-color:var(--navy);color:#fff;
   }
-  .card .stack .btn,.card .stack .btn.go{width:100%;margin:0}
+  :is(.card,.cardcta,.wallcta) .stack .btn,
+  :is(.card,.cardcta,.wallcta) .stack .btn.go{width:100%;margin:0}
 
   @media (min-width:900px){
     .stagewrap{max-width:22rem}
@@ -639,10 +723,20 @@ const POSTMARK = `
    ============================================================ */
 let current = 0;
 let answers = [];
+/* Worked out when the quiz finishes, held across the interstitial so the
+   reveal does not have to score it again. */
+let finished = null;
 let shuffled = [];
 let locked = false;
 
 const app = document.getElementById("app");
+
+/* A screen change is a new page, not a scroll. Without this you tap through
+   from the foot of a long result and land halfway down the next screen. */
+function toTop(){
+  window.scrollTo(0, 0);
+  if(document.scrollingElement) document.scrollingElement.scrollTop = 0;
+}
 
 function shuffle(a){
   const arr = a.slice();
@@ -656,6 +750,8 @@ function shuffle(a){
 function startQuiz(){
   current = 0;
   answers = [];
+  finished = null;
+  tallyCounted = false;
   shuffled = QUESTIONS.map(q => shuffle(q.options));
   document.body.className = "quiz";
   renderQuestion();
@@ -670,7 +766,7 @@ function pick(btn, patrol){
     locked = false;
     current++;
     if(current < QUESTIONS.length){ renderQuestion(); }
-    else { renderResult(); }
+    else { renderAlmost(); }
   }, 200);
 }
 
@@ -780,6 +876,12 @@ function purgeDate(){
   d.setUTCDate(d.getUTCDate() + 7);
   return d;
 }
+/* "13 September" reads better on a chip than the full date, which is spelled
+   out in the note underneath it. */
+function purgeDateShort(){
+  return purgeDate().toLocaleDateString("en-GB", {day:"numeric", month:"long", timeZone:"UTC"});
+}
+
 function purgeDateText(){
   return purgeDate().toLocaleDateString("en-GB", {day:"numeric", month:"long", year:"numeric", timeZone:"UTC"});
 }
@@ -910,6 +1012,23 @@ function paintTally(mine){
    data URI straight off the computed style and tint it.
    ============================================================ */
 const headCache = {};
+let fleurPromise = null;
+
+/* The masthead fleur is a transparent PNG, so its alpha doubles as a mask.
+   Filling that mask is the reversed (mono) mark, which is a permitted usage;
+   it is not a recolour of the purple one. */
+function loadFleur(){
+  if(fleurPromise) return fleurPromise;
+  fleurPromise = new Promise((resolve)=>{
+    const el = document.querySelector(".mast .fleur");
+    if(!el || !el.src){ resolve(null); return; }
+    const img = new Image();
+    img.onload = ()=>resolve(img);
+    img.onerror = ()=>resolve(null);
+    img.src = el.src;
+  });
+  return fleurPromise;
+}
 
 function headDataUri(id){
   const probe = document.createElement("span");
@@ -964,11 +1083,27 @@ function drawHead(ctx, img, colour, x, y, w, h, alpha){
 const FORMATS = {
   profile:{ w:1080, h:1080, label:"Profile picture", sub:"Square",
             note:"Sized for a round profile picture. Everything important sits inside the circle." },
+  /* Not offered in the studio. Every upload is rendered in this one shape so
+     the wall reads as a wall rather than three designs cropped three ways. */
+  wall:   { w:1080, h:1080, label:"Patrol wall", sub:"Square", wall:true, note:"" },
   post:   { w:1080, h:1350, label:"Instagram post", sub:"4:5",
             note:"The tallest portrait Instagram will show in the feed without cropping." },
   story:  { w:1080, h:1920, label:"Story", sub:"9:16",
             note:"Full screen, with room left top and bottom for Instagram's own buttons." }
 };
+
+/* How much of the card's height the cream panel takes. The panel is sized to
+   the lines it has to hold, not the other way round: at 4:5 a shorter panel
+   puts the rule through the traits, and the story needs a deeper panel than
+   its share of the extra height because its type is scaled up. The wall card
+   carries three lines instead of seven, so it needs less.
+
+   One definition, because the drawing and the pan clamp both need it: they
+   were separate numbers once and the story's clamp went on letting people pan
+   the photo behind the panel after the panel grew. */
+function panelFraction(fmt){
+  return fmt === "wall" ? 0.26 : fmt === "story" ? 0.35 : 0.35;
+}
 
 /* Sets ctx.font, shrinking it until the line fits the space it has. Patrol
    names are short but "I'm a Curlew - which patrol are you?" is not. */
@@ -1133,7 +1268,7 @@ function drawProfileCard(ctx, W, H, st, id, pt, head){
   /* Patrol-colour arc plate across the foot of the badge. */
   const outerR = S/2 - rimW;
   const innerR = outerR - S*0.152;
-  const half = 1.18;                       /* radians either side of straight down */
+  const half = 1.30;                       /* radians either side of straight down */
   /* Same rule as the result banners: the plate re-inks against what is behind
      it rather than sitting in one fixed colour. On a photo the patrol colour
      is the plate; on the patrol's own flood the plate goes cream. */
@@ -1154,31 +1289,46 @@ function drawProfileCard(ctx, W, H, st, id, pt, head){
   ctx.stroke();
   ctx.restore();
 
-  /* Both lines sit on the plate, never half on the photo behind it. */
+  /* The name sits in the middle of the plate with the two marks either side of
+     it, so nothing is laid over the photo. */
   ctx.save();
   ctx.fillStyle = plateInk;
-  ctx.font = `800 ${S*0.024}px ${SANS}`;
-  arcText(ctx, "BROWNSEA 1907", cx, cy, innerR + S*0.030, Math.PI/2, S*0.014);
-  ctx.font = `700 ${S*0.080}px ${SERIF}`;
-  arcText(ctx, pt.name.toUpperCase(), cx, cy, innerR + S*0.087, Math.PI/2, S*0.011);
+  ctx.font = `700 ${S*0.078}px ${SERIF}`;
+  arcText(ctx, pt.name.toUpperCase(), cx, cy, innerR + S*0.082, Math.PI/2, S*0.010);
   ctx.restore();
 
-  /* Animal stamp, up in the corner where a circular crop still shows it.
-     With no photo the head is already the hero, so nothing goes on top of it. */
-  if(st.img) drawStamp(ctx, head, id, W*0.255, H*0.255, S*0.115);
+  /* Animal to the left of the name, Scouts fleur to the right. Angle increases
+     anticlockwise on canvas, so the larger angle is the left-hand side. */
+  const markR = (innerR + outerR)/2;
+  /* Far enough inside the plate's ends that the marks' square bounding boxes
+     clear the radial cut: at 1.02 against a 1.18 plate the wolf's snout was
+     sliced off. */
+  const markA = 1.05;
+  const markH = S*0.082;
+  const put = (img, angle) => {
+    if(!img) return;
+    const mx = cx + markR*Math.cos(angle);
+    const my = cy + markR*Math.sin(angle);
+    drawHead(ctx, img, plateInk, mx - markH/2, my - markH/2, markH, markH);
+  };
+  put(head, Math.PI/2 + markA);
+  put(st.fleur, Math.PI/2 - markA);
 }
 
 function drawPanelCard(ctx, W, H, st, id, pt, head){
   const story = st.fmt === "story";
-  /* The panel is sized to the seven lines it has to hold, not the other way
-     round: at 4:5 a shorter panel puts the rule through the traits. */
-  const panelH = story ? H*0.29 : H*0.35;
+  const wall = st.fmt === "wall";
+  const panelH = H*panelFraction(st.fmt);
   const panelTop = H - panelH;
   const photoH = panelTop + W*0.03;
   const pad = W*0.085;
   /* Story leaves the bottom strip clear of Instagram's own controls; the
      post format just wants an even margin. */
   const footRoom = story ? H*0.075 : W*0.055;
+  /* The story is a third taller than the post and was being given the post's
+     type sizes, so it spent its extra height on empty margin instead of on
+     legibility. */
+  const k = story ? 1.22 : 1;
 
   if(st.img){
     drawPhoto(ctx, st.img, 0, 0, W, photoH, st);
@@ -1188,8 +1338,10 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
     drawHead(ctx, head, onFlood(id), W*0.18, photoH*0.16, W*0.64, photoH*0.62, 0.95);
   }
 
-  drawPostmark(ctx, W - pad - W*0.115, (story ? H*0.115 : W*0.16), W*0.115,
-               st.img ? PAPER : onFlood(id), st.img ? 0.95 : 0.5, !!st.img);
+  if(!wall){
+    drawPostmark(ctx, W - pad - W*0.115, (story ? H*0.115 : W*0.16), W*0.115,
+                 st.img ? PAPER : onFlood(id), st.img ? 0.95 : 0.5, !!st.img);
+  }
 
   /* Torn cream panel. */
   ctx.save();
@@ -1209,10 +1361,11 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
   const stampR = W*0.115;
   drawStamp(ctx, head, id, W - pad - stampR, panelTop + W*0.012, stampR);
 
-  /* One baseline rhythm, measured down from the top of the text block, so the
-     same numbers hold at 4:5 and 9:16. The block is anchored to leave the
-     story's bottom strip clear of Instagram's own controls. */
-  const LINE = {eyebrow:0, name:0.096, tagline:0.148, rule:0.180, traits:0.224, dates:0.264, url:0.308};
+  /* One baseline rhythm, measured down from the top of the text block, scaled
+     per format. The eyebrow sits well clear of the name now: at 4:5 the two
+     were close enough to read as one crowded block. */
+  const LINE = {eyebrow:0, name:0.116*k, tagline:0.170*k, rule:0.202*k,
+                traits:0.248*k, dates:0.288*k, url:0.344*k};
   const topY = H - footRoom - W*LINE.url;
   const narrowW = W - pad*2 - stampR*2.5;   /* the eyebrow runs beside the stamp */
   const wideW = W - pad*2;
@@ -1223,6 +1376,22 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
   ctx.save();
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
+
+  /* The wall card is looked at about 170px wide in a grid of them. Only the
+     patrol name and the animal survive at that size, so it carries those and
+     stops. Everything else would be noise pretending to be information. */
+  if(wall){
+    ctx.fillStyle = PATROL_INK[id];
+    fitFont(ctx, pt.name, wideW - stampR*2.4, W*0.155, 700, SERIF);
+    ctx.fillText(pt.name, pad, panelTop + W*0.150);
+    ctx.fillStyle = NAVY;
+    ctx.globalAlpha = 0.72;
+    fitFont(ctx, "BROWNSEA 1907", wideW, W*0.030, 800, SANS);
+    ctx.fillText("BROWNSEA 1907", pad, panelTop + W*0.205);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    return;
+  }
 
   ctx.fillStyle = NAVY;
   ctx.globalAlpha = 0.8;
@@ -1254,11 +1423,26 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
   fitFont(ctx, dates, wideW, W*0.026, 700, SANS);
   ctx.fillText(dates, pad, topY + W*LINE.dates);
 
-  ctx.globalAlpha = 0.95;
-  ctx.fillStyle = PATROL_INK[id];
-  fitFont(ctx, cardUrlLine(), wideW, W*0.028, 800, SANS);
-  ctx.fillText(cardUrlLine(), pad, topY + W*LINE.url);
   ctx.globalAlpha = 1;
+
+  /* A pill rather than another line of small type. It contrasts on all four
+     patrols without needing a colour that happens to suit one of them, and it
+     reads as somewhere to go rather than a footnote. */
+  const url = cardUrlLine();
+  const urlSize = W*0.034*k;
+  ctx.font = `800 ${urlSize}px ${SANS}`;
+  const urlW = ctx.measureText(url).width;
+  const padX = W*0.030, padY = W*0.019;
+  const pillH = urlSize + padY*2;
+  const pillY = topY + W*LINE.url - urlSize*0.78 - padY;
+  ctx.fillStyle = PATROL_HEX[id];
+  if(ctx.roundRect){
+    ctx.beginPath(); ctx.roundRect(pad, pillY, urlW + padX*2, pillH, pillH/2); ctx.fill();
+  }else{
+    ctx.fillRect(pad, pillY, urlW + padX*2, pillH);
+  }
+  ctx.fillStyle = onFlood(id);
+  ctx.fillText(url, pad + padX, pillY + padY + urlSize*0.78);
   ctx.restore();
 }
 
@@ -1270,14 +1454,15 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
    ============================================================ */
 let studio = null;
 
-function newStudioState(id, head){
-  return { patrol:id, head:head, fmt:"profile", img:null, zoom:1, ox:0, oy:0 };
+function newStudioState(id, head, fleur){
+  return { patrol:id, head:head, fleur:fleur || null, fmt:"profile", img:null, zoom:1, ox:0, oy:0 };
 }
 
 function clampPan(){
   if(!studio || !studio.img) { studio.ox = 0; studio.oy = 0; return; }
   const F = FORMATS[studio.fmt];
-  const frameH = studio.fmt === "profile" ? F.h : (F.h - (studio.fmt === "story" ? F.h*0.29 : F.h*0.35) + F.w*0.03);
+  const frameH = (studio.fmt === "profile") ? F.h
+    : (F.h - F.h*panelFraction(studio.fmt) + F.w*0.03);
   const w = F.w, h = frameH;
   const img = studio.img;
   const sc = Math.max(w/img.width, h/img.height) * studio.zoom;
@@ -1360,7 +1545,7 @@ async function shareCard(blobIn, text){
   const file = new File([blob], cardFilename(), {type:"image/jpeg"});
   if(navigator.canShare && navigator.canShare({files:[file]})){
     try{
-      await navigator.share({files:[file], text:text, title:"Which patrol are you?"});
+      await navigator.share({files:[file], text:text, title:"WSJ 2027 UK — Which Brownsea Island patrol are you?"});
       return true;
     }catch(err){
       if(err && err.name === "AbortError") return true;   /* they changed their mind */
@@ -1397,16 +1582,16 @@ async function sharePatrol(id, btn){
   try{
     /* Build a card on the fly so what lands in the chat actually shows the
        patrol. Falls back to text and a link where files can't be shared. */
-    const head = await loadHead(id);
+    const [head, fleur] = await Promise.all([loadHead(id), loadFleur()]);
     const saved = studio;
-    studio = newStudioState(id, head);
+    studio = newStudioState(id, head, fleur);
     let blob = null;
     try{ blob = await renderExport(); }catch(_){}
     studio = saved;
     if(blob && await shareCard(blob, text + " " + url)) return;
 
     if(navigator.share){
-      try{ await navigator.share({title:"Which patrol are you?", text:text, url:url}); return; }catch(err){
+      try{ await navigator.share({title:"WSJ 2027 UK — Which Brownsea Island patrol are you?", text:text, url:url}); return; }catch(err){
         if(err && err.name === "AbortError") return;
       }
     }
@@ -1429,6 +1614,28 @@ async function sharePatrol(id, btn){
    are held for the Jamboree Team to release, so nothing appears
    on the wall unchecked.
    ============================================================ */
+/* Show the wall rather than describing it. Four real cards are a better
+   argument for joining in than any sentence. Falls back to dashed placeholders
+   when the wall is empty or unreachable, which still reads as "space for you". */
+async function paintWallStrip(){
+  const strip = document.getElementById("wallStrip");
+  if(!strip) return;
+  strip.innerHTML = '<span class="ghost"></span><span class="ghost"></span><span class="ghost"></span><span class="ghost"></span>';
+  if(!apiUrl("") || FLAGS.wall === false) return;
+  try{
+    const res = await fetch(apiUrl("/photos"), {headers:{"Accept":"application/json"}});
+    const data = await res.json();
+    const items = (Array.isArray(data) ? data : (data && data.items) || []).slice(0, 4);
+    if(!items.length) return;
+    strip.innerHTML = items.map(i =>
+      `<img src="${esc(i.url)}" alt="" loading="lazy">`
+    ).join("") + '<span class="ghost"></span>';
+    strip.querySelectorAll("img").forEach(im=>{
+      im.addEventListener("error", ()=>{ im.replaceWith(Object.assign(document.createElement("span"), {className:"ghost"})); });
+    });
+  }catch(_){ /* the placeholders already say the right thing */ }
+}
+
 async function uploadToLog(btn){
   const consent = document.getElementById("logConsent");
   if(!consent || !consent.checked){
@@ -1447,17 +1654,23 @@ async function uploadToLog(btn){
   btn.disabled = true;
   btn.textContent = "Uploading...";
   try{
-    const blob = await renderExport();
+    /* Rendered in the wall's own shape rather than whichever format happens to
+       be selected, so the wall is one design instead of three cropped square. */
+    const saved = studio.fmt;
+    studio.fmt = "wall";
+    let blob;
+    try{ blob = await renderExport(); }
+    finally{ studio.fmt = saved; }
     const fd = new FormData();
     fd.append("patrol", studio.patrol);
-    fd.append("photo", blob, cardFilename());
+    fd.append("photo", blob, "wall-" + studio.patrol + ".jpg");
     const res = await fetch(apiUrl("/photos"), {method:"POST", body:fd});
     if(!res.ok) throw new Error("upload");
     const out = await res.json().catch(()=>({}));
     const queued = out && out.status === "pending";
     document.getElementById("logbox").innerHTML = queued
-      ? `<p class="thanks">In the queue. The Jamboree Team pop cards onto the wall through the day, and everything comes down on ${esc(purgeDateText())}.</p>`
-      : `<p class="thanks">It's on the wall. Everything comes down on ${esc(purgeDateText())}.</p>`;
+      ? `<p class="thanks">You're in the queue. The Jamboree Team put cards up through the day, and everything comes down on ${esc(purgeDateText())}.</p>`
+      : `<p class="thanks">You're on the wall. Go and find the rest of your patrol on it. Everything comes down on ${esc(purgeDateText())}.</p>`;
     toast(queued ? "Sent to the patrol log." : "Added to the patrol log.");
   }catch(_){
     btn.disabled = false;
@@ -1496,6 +1709,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
    RENDER
    ============================================================ */
 function renderIntro(){
+  toTop();
   document.body.className = "";
   const friend = sharedPatrol && PATROLS[sharedPatrol] ? PATROLS[sharedPatrol] : null;
   app.innerHTML = `
@@ -1537,6 +1751,7 @@ function renderIntro(){
 
 function renderQuestion(){
   const q = QUESTIONS[current];
+  toTop();
   document.body.className = "quiz";
   app.innerHTML = `
     <div class="screen">
@@ -1559,10 +1774,63 @@ function renderQuestion(){
   document.getElementById("backBtn").addEventListener("click", goBack);
 }
 
+/* ============================================================
+   RENDER — ALMOST THERE
+   The quiz is finished here, so this is where the run is recorded.
+   The Pavilion ask lives on this screen rather than after the
+   reveal, where it was competing with the patrol for attention.
+   ============================================================ */
+function renderAlmost(){
+  finished = scoreDetail();
+  toTop();
+  document.body.className = "";
+
+  /* Counted the moment the seventh answer lands, not when the reveal is
+     rendered: someone who never taps through still finished the quiz. */
+  recordOutcome(finished.patrol, Object.assign({answers: answers.slice()}, finished));
+
+  app.innerHTML = `
+    <div class="screen almost">
+      <p class="eyebrow">Seven answers in</p>
+      <h1 class="banner">Almost<br>there</h1>
+      <p class="sub">We know which of the four 1907 patrols you belong to. One thing first, while you're here.</p>
+
+      <div class="card">
+        <div class="ctarow">
+          <a href="${JAMBOREE_URL}" target="_blank" rel="noopener"><img src="${WSJ_MARK}" alt="Poland 2027, 26th World Scout Jamboree"></a>
+          <p>Help build the UK Pavilion<span class="tinyline">Poland 2027 &middot; 120 years since Brownsea</span></p>
+        </div>
+        <p class="ctatext">Come and find the Jamboree Team in the <strong>International Tent</strong> and tell us your ideas for the UK Pavilion. Or leave your email and help us design it. We're keen to hear your thoughts.</p>
+        <div class="emailrow" id="emailrow">
+          <input id="emailIn" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" aria-label="Your email">
+          <p class="micro note" id="emailNote" role="alert"></p>
+          <button class="btn go" id="emailBtn">Count me in</button>
+        </div>
+        <p class="micro">Pavilion co-design updates only. No spam.</p>
+        <a class="jlink" href="${JAMBOREE_URL}" target="_blank" rel="noopener">More about the Jamboree<span class="arr">&rarr;</span></a>
+      </div>
+
+      <p class="holding"><i></i> Your patrol is ready</p>
+
+      <div class="ibottom">
+        <button class="btn primary" id="revealBtn">Show me my patrol</button>
+      </div>
+    </div>`;
+
+  document.getElementById("emailBtn").addEventListener("click", ()=>submitEmail(finished.patrol));
+  document.getElementById("emailIn").addEventListener("keydown", (ev)=>{ if(ev.key==="Enter") submitEmail(finished.patrol); });
+  document.getElementById("revealBtn").addEventListener("click", ()=>renderResult());
+}
+
+/* ============================================================
+   RENDER — THE REVEAL
+   Patrol only. The Pavilion ask has already been made, so this
+   screen has one job and one thing to do next.
+   ============================================================ */
 function renderResult(forced){
-  const detail = forced ? null : scoreDetail();
-  const id = forced || detail.patrol;
+  const id = forced || (finished && finished.patrol) || scoreResult();
   const pt = PATROLS[id];
+  toTop();
   document.body.className = "result-mode result-" + id;
   app.innerHTML = `
     <div class="screen" style="position:relative">
@@ -1578,56 +1846,52 @@ function renderResult(forced){
         </div>
       </div>
       <div class="rbottom">
-        <div class="rcards">
         <div class="card">
           <p class="cardhead">The 1907 ${pt.name}</p>
           <p>${pt.members}</p>
           <p class="fact">${pt.fact}</p>
           <div class="tally" id="tally"></div>
         </div>
-        <div class="card">
-          <div class="ctarow">
-            <a href="${JAMBOREE_URL}" target="_blank" rel="noopener"><img src="${WSJ_MARK}" alt="Poland 2027, 26th World Scout Jamboree"></a>
-            <p>Help build the UK Pavilion<span class="tinyline">Poland 2027 &middot; 120 years since Brownsea</span></p>
+
+        <div class="cardcta" data-needs="cards">
+          <p class="eyebrow">Make it yours</p>
+          <h2>Your ${pt.name} card</h2>
+          <p>Add a photo and put your patrol on your profile. Made on your phone, in a few taps, yours to keep.</p>
+          <div class="ctapreview">
+            <div class="ghostcard post">4:5</div>
+            <canvas id="ctaPreview" width="300" height="300" aria-label="A preview of your ${pt.name} card"></canvas>
+            <div class="ghostcard story">9:16</div>
           </div>
-          <p class="ctatext">Come and find the Jamboree Team in the <strong>International Tent</strong> and tell us your ideas for the UK Pavilion. Or leave your email and help us design it. We're keen to hear your thoughts.</p>
-          <div class="emailrow" id="emailrow">
-            <input id="emailIn" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" aria-label="Your email">
-            <p class="micro note" id="emailNote" role="alert"></p>
-            <button class="btn go" id="emailBtn">Count me in</button>
-          </div>
-          <p class="micro">Pavilion co-design updates only. No spam.</p>
-          <a class="jlink" href="${JAMBOREE_URL}" target="_blank" rel="noopener">More about the Jamboree<span class="arr">&rarr;</span></a>
-        </div>
-        </div>
-        <div class="stack" data-needs="cards">
           <button class="btn primary" id="cardBtn">Make my ${pt.name} card</button>
         </div>
-        <div class="stack">
-          <button class="btn" id="shareBtn">Share my patrol</button>
-          <button class="btn" id="againBtn">Start again</button>
+
+        <div class="quietrow">
+          <button class="linkbtn" id="shareBtn">Share my patrol</button>
+          <button class="linkbtn" id="againBtn">Start again</button>
         </div>
         <p class="history">Real patrol, real names, real colour. The personalities are just for fun. BP mixed everyone up on purpose.</p>
       </div>
     </div>`;
-  document.getElementById("againBtn").addEventListener("click", ()=>{ sharedPatrol = null; renderIntro(); });
+
+  document.getElementById("againBtn").addEventListener("click", ()=>{ sharedPatrol = null; finished = null; renderIntro(); });
   document.getElementById("cardBtn").addEventListener("click", ()=>renderCardStudio(id));
-  document.getElementById("emailBtn").addEventListener("click", ()=>submitEmail(id));
-  document.getElementById("emailIn").addEventListener("keydown", (ev)=>{ if(ev.key==="Enter") submitEmail(id); });
   document.getElementById("shareBtn").addEventListener("click", (e)=>sharePatrol(id, e.currentTarget));
   applyFlags();
 
-  /* Count the outcome, then show how the camp is splitting. A forced render
-     (the console, a screenshot pass) is not somebody's quiz, so it is not
-     counted and no run is recorded. */
-  if(detail){
-    recordOutcome(id, Object.assign({answers: answers.slice()}, detail))
-      .then(loadTally).then(()=>paintTally(id));
-  }else{
-    loadTally().then(()=>paintTally(id));
-  }
+  /* A picture of the thing sells it better than a sentence about it. */
+  paintCtaPreview(id);
+
+  /* The outcome was already counted at the interstitial; a forced render
+     (console, screenshots) never counts. */
+  loadTally().then(()=>paintTally(id));
 }
 
+async function paintCtaPreview(id){
+  const c = document.getElementById("ctaPreview");
+  if(!c) return;
+  const [head, fleur] = await Promise.all([loadHead(id), loadFleur()]);
+  drawCard(c.getContext("2d"), c.width, c.height, newStudioState(id, head, fleur));
+}
 
 /* ============================================================
    RENDER — CARD STUDIO
@@ -1635,8 +1899,9 @@ function renderResult(forced){
 async function renderCardStudio(id, keep){
   if(FLAGS.cards === false){ renderResult(id); toast("Patrol cards are switched off just now."); return; }
   const pt = PATROLS[id];
-  const head = await loadHead(id);
-  studio = keep && keep.patrol === id ? keep : newStudioState(id, head);
+  const [head, fleur] = await Promise.all([loadHead(id), loadFleur()]);
+  studio = keep && keep.patrol === id ? keep : newStudioState(id, head, fleur);
+  toTop();
   document.body.className = "result-mode result-" + id;
 
   app.innerHTML = `
@@ -1648,7 +1913,7 @@ async function renderCardStudio(id, keep){
         <p class="stagenote" id="stageNote"></p>
 
         <div class="segrow" role="group" aria-label="Card shape">
-          ${Object.keys(FORMATS).map(k=>`
+          ${Object.keys(FORMATS).filter(k=>!FORMATS[k].wall).map(k=>`
             <button type="button" data-fmt="${k}" aria-pressed="${k==="profile"}">
               ${esc(FORMATS[k].label)}<br><span class="segsub">${esc(FORMATS[k].sub)}</span>
             </button>`).join("")}
@@ -1680,27 +1945,22 @@ async function renderCardStudio(id, keep){
         </div>
       </div>
 
-      <div class="card" id="logbox" data-needs="wall uploads">
-        <p class="cardhead">Optional: add it to the patrol log</p>
-        <p>The Pavilion has a wall of cards from everyone at Reunion. You can put yours on it &mdash; or not. The card is yours either way, and the quiz works exactly the same if you skip this.</p>
-        <div class="warnbox">
-          <b>This one does leave your phone.</b>
-          <ul>
-            <li>Your card becomes <b>public</b>. Anyone who opens the patrol log can see it.</li>
-            <li>${FLAGS.moderate
-                  ? "The Jamboree Team look at every card before it goes on the wall."
-                  : "It goes on the wall straight away."}</li>
-            <li>Anyone can report a card, and it comes down on the spot.</li>
-            <li>Everything is <b>deleted on ${esc(purgeDateText())}</b>, seven days after Reunion.</li>
-            <li>Only the picture and the patrol are stored. No name, no email, nothing else.</li>
-            <li>Under 18? Check with your leader or a parent first.</li>
-          </ul>
+      <div class="wallcta" id="logbox" data-needs="wall uploads">
+        <p class="eyebrow">The wall at Gilwell Reunion</p>
+        <h2>Put yourself on the wall</h2>
+        <p>There's a wall of patrol cards at the Pavilion, filling up all day. Add yours and find the rest of your patrol on it.</p>
+        <div class="wallstrip" id="wallStrip" aria-hidden="true"></div>
+        <div class="wallfacts">
+          <span>Anyone can see it</span>
+          <span>${FLAGS.moderate ? "We check it first" : "Up straight away"}</span>
+          <span>Gone ${esc(purgeDateShort())}</span>
+          <span>Totally optional</span>
         </div>
-        <label class="consent"><input type="checkbox" id="logConsent"> I'm happy for this card to be public until it's deleted.</label>
+        <label class="consent"><input type="checkbox" id="logConsent"> Yes, put my card on the wall. I'm happy for anyone to see it until it's deleted.</label>
         <div class="stack">
-          <button class="btn go" id="uploadBtn">Add my card to the log</button>
+          <button class="btn go" id="uploadBtn">Add me to the wall</button>
         </div>
-        <p class="micro">Changed your mind later? Find the Jamboree Team in the International Tent and we'll take it straight down.</p>
+        <p class="wallnote">Only the card and the patrol are stored &mdash; no name, no email. Anyone can report a card and it comes down on the spot. Changed your mind? Find the Jamboree Team in the International Tent.</p>
       </div>
 
       <div class="stack">
@@ -1772,6 +2032,7 @@ async function renderCardStudio(id, keep){
     if(!done){ toast("This browser can't share images. Saving it instead."); saveCard(); }
   });
   document.getElementById("uploadBtn").addEventListener("click", (e)=>uploadToLog(e.currentTarget));
+  paintWallStrip();
   document.getElementById("seeLogBtn").addEventListener("click", ()=>renderLog(id));
   document.getElementById("backBtn").addEventListener("click", ()=>renderResult(id));
   applyFlags();
@@ -1786,6 +2047,7 @@ async function renderLog(fromPatrol){
     toast("The patrol wall is switched off just now.");
     return;
   }
+  toTop();
   document.body.className = "";
   app.innerHTML = `
     <div class="screen">

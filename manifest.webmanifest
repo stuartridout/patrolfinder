@@ -1,7 +1,7 @@
 {
-  "name": "Which patrol are you? — Brownsea 1907",
-  "short_name": "Which patrol?",
-  "description": "Seven quick questions to find your 1907 Brownsea patrol. UK Pavilion, Poland 2027.",
+  "name": "WSJ 2027 UK — Which Brownsea Island patrol are you?",
+  "short_name": "WSJ Patrol",
+  "description": "Seven quick questions to find your 1907 Brownsea Island patrol. UK Pavilion at the 26th World Scout Jamboree, Poland 2027.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

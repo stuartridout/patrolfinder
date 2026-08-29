@@ -1,15 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Brownsea patrol roundel">
-  <title>Which patrol are you?</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="112" fill="#1B3579"/>
-  <circle cx="256" cy="256" r="207" fill="none" stroke="#FAF5E9" stroke-width="9" stroke-dasharray="19 19" stroke-linecap="butt" opacity=".85"/>
-  <circle cx="256" cy="256" r="176" fill="#FAF5E9"/>
-  <g transform="rotate(45 256 256)">
-    <path d="M256 256 L256 90 A166 166 0 0 0 90 256 Z" fill="#2A5CAD"/>
-    <path d="M256 256 L422 256 A166 166 0 0 0 256 90 Z" fill="#2F7D3F"/>
-    <path d="M256 256 L256 422 A166 166 0 0 0 422 256 Z" fill="#F5B01E"/>
-    <path d="M256 256 L90 256 A166 166 0 0 0 256 422 Z" fill="#C02D24"/>
-    <path d="M256 84 V428 M84 256 H428" stroke="#FAF5E9" stroke-width="15" stroke-linecap="round"/>
+  <!-- Baden-Powell in profile, facing left: campaign hat, nose, moustache,
+       chin, rolled neckerchief, cropped at the shoulder. Drawn in the same
+       solid one-colour language as the four patrol animals, with the same
+       single punched eye.
+
+       Two rules learned the hard way: no crown dent, because from a true side
+       view it is not visible and drawing one makes the hat read as a pair of
+       horns; and only two notches in the profile, because a third turns the
+       face into a sawtooth long before it reaches favicon size.
+
+       The 300-unit drawing is scaled into the 512 icon box. icons/ is
+       regenerated from this file, so it is the one place the mark is drawn. -->
+  <g transform="scale(1.70667)">
+    <path fill="#FAF5E9" fill-rule="evenodd" d="M 20 96 C 44 85 74 80 108 79 C 109 57 116 40 131 33 C 147 25 167 25 183 33 C 198 40 205 57 206 79 C 240 80 268 86 282 97 C 289 102 286 113 275 117 C 254 122 230 120 209 116 C 210 140 207 162 200 181 C 197 192 195 201 196 210 C 210 215 221 223 226 234 C 242 244 253 260 258 279 C 261 288 262 295 262 300 L 58 300 C 58 292 61 263 74 246 C 83 235 93 226 106 221 C 109 213 115 206 122 202 C 116 192 106 183 98 179 C 92 176 90 170 94 165 C 99 162 104 161 107 158 C 101 157 92 157 85 154 C 80 152 78 149 81 146 C 86 144 92 144 96 142 C 91 140 82 138 75 134 C 70 132 68 128 71 125 C 77 117 88 110 97 103 C 102 100 108 99 114 98 C 88 102 44 107 28 110 C 16 111 11 101 20 96 Z M 130 121 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
   </g>
-  <circle cx="256" cy="256" r="41" fill="#FAF5E9"/>
-  <circle cx="256" cy="256" r="41" fill="none" stroke="#1B3579" stroke-width="9"/>
 </svg>
