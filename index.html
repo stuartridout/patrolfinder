@@ -317,10 +317,12 @@
   .erapick .btn.primary{
     flex:1 1 0;min-width:0;min-height:104px;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-    padding:14px 10px;font-size:1.02rem;line-height:1.2;border-radius:18px;
+    padding:14px 10px;font-size:1.02rem;line-height:1.2;border-radius:10px;
   }
   .erasub{font-size:.7rem;font-weight:700;letter-spacing:.01em;text-transform:none;opacity:.85;line-height:1.3}
-  .ibottom #logBtn{margin-top:10px;text-align:center}
+  /* Matches the two above it: the three buttons in this block are one group
+     and a softer corner on the odd one out reads as a mistake. */
+  .ibottom #logBtn{margin-top:10px;text-align:center;border-radius:10px}
 
   /* Short phones - an SE, or anything in landscape-ish - need the slack
      taken out of the decorative parts rather than the buttons. */
