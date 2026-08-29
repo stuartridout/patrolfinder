@@ -716,13 +716,23 @@ const POSTMARK = `
 <svg viewBox="0 0 120 120" aria-hidden="true">
   <circle cx="60" cy="60" r="56" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 5"/>
   <circle cx="60" cy="60" r="41" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <defs><path id="arcT" d="M16,60 a44,44 0 1,1 88,0"/></defs>
+  <!-- Place over the top, date under the foot, both on the band between the
+       rings. The date was set flat below YEARS and its ends ran through the
+       inner ring. The bottom arc needs the larger radius of the two: a
+       textPath baseline sits on the path and the glyphs of a bottom arc grow
+       inward, so at the top arc's radius they would cross the same ring. -->
+  <defs>
+    <path id="arcT" d="M16,60 a44,44 0 1,1 88,0"/>
+    <path id="arcB" d="M10,60 a50,50 0 1,0 100,0"/>
+  </defs>
   <text fill="currentColor" font-size="10" letter-spacing="2.5" font-weight="700" font-family="inherit">
     <textPath href="#arcT" startOffset="50%" text-anchor="middle">BROWNSEA ISLAND</textPath>
   </text>
-  <text fill="currentColor" x="60" y="60" text-anchor="middle" font-size="25" font-weight="800">120</text>
-  <text fill="currentColor" x="60" y="74" text-anchor="middle" font-size="9.5" letter-spacing="3.5" font-weight="700">YEARS</text>
-  <text fill="currentColor" x="60" y="90" text-anchor="middle" font-size="8.5" letter-spacing="1.5" font-weight="700">1907 &#8226; 2027</text>
+  <text fill="currentColor" x="60" y="62" text-anchor="middle" font-size="28" font-weight="800">120</text>
+  <text fill="currentColor" x="60" y="76" text-anchor="middle" font-size="9.5" letter-spacing="3.5" font-weight="700">YEARS</text>
+  <text fill="currentColor" font-size="8.5" letter-spacing="1.5" font-weight="700" font-family="inherit">
+    <textPath href="#arcB" startOffset="50%" text-anchor="middle">1907 &#8226; 2027</textPath>
+  </text>
 </svg>`;
 
 /* ============================================================
@@ -1150,23 +1160,33 @@ function drawPhoto(ctx, img, x, y, w, h, st){
 
 /* Text set along a circle. Tops point inwards so the bottom of a
    badge reads the right way up. */
-function arcText(ctx, text, cx, cy, r, centreAngle, spacing){
+/* Text set around a circle. `outward` puts the tops of the letters away from
+   the centre, which is what an arc across the top of a badge needs; the
+   default points them inward, which is what an arc across the bottom needs so
+   it reads without turning the badge over.
+
+   The two cases also sweep opposite ways, and that is the part that is easy
+   to get wrong: left-to-right on the page is a rising angle at the top of a
+   circle and a falling one at the bottom. Getting it wrong does not look
+   broken, it looks upside down, which is how "BROWNSEA ISLAND" shipped. */
+function arcText(ctx, text, cx, cy, r, centreAngle, spacing, outward){
+  const dir = outward ? 1 : -1;
   const chars = [...text];
   const widths = chars.map(c => ctx.measureText(c).width);
   const total = widths.reduce((a,b)=>a+b, 0) + spacing*(chars.length-1);
-  let a = centreAngle + (total/2)/r;          /* angle decreases left to right */
+  let a = centreAngle - dir*(total/2)/r;
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   chars.forEach((ch,i)=>{
     const step = widths[i]/r;
-    a -= step/2;
+    a += dir*step/2;
     ctx.save();
     ctx.translate(cx + r*Math.cos(a), cy + r*Math.sin(a));
-    ctx.rotate(a - Math.PI/2);
+    ctx.rotate(a + dir*Math.PI/2);
     ctx.fillText(ch, 0, 0);
     ctx.restore();
-    a -= step/2 + spacing/r;
+    a += dir*(step/2 + spacing/r);
   });
   ctx.restore();
 }
@@ -1190,15 +1210,20 @@ function drawPostmark(ctx, cx, cy, r, colour, alpha, onPhoto){
   ctx.setLineDash([]);
   ctx.lineWidth = r*0.027;
   ctx.beginPath(); ctx.arc(cx, cy, r*0.73, 0, Math.PI*2); ctx.stroke();
-  ctx.font = `800 ${r*0.44}px ${SANS}`;
+  /* Place and date both ride the band between the two rings, one over the top
+     and one under the foot. The date used to be set flat below YEARS, where
+     its ends ran straight through the inner ring. That leaves the middle of
+     the stamp for the number, which is the thing anyone actually reads, so it
+     is centred on the circle rather than sitting low in it. */
   ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-  ctx.fillText("120", cx, cy + r*0.06);
+  ctx.font = `800 ${r*0.50}px ${SANS}`;
+  ctx.fillText("120", cx, cy + r*0.05);
   ctx.font = `700 ${r*0.15}px ${SANS}`;
-  ctx.fillText("YEARS", cx, cy + r*0.30);
-  ctx.font = `700 ${r*0.135}px ${SANS}`;
-  ctx.fillText("1907 • 2027", cx, cy + r*0.55);
+  ctx.fillText("YEARS", cx, cy + r*0.29);
   ctx.font = `700 ${r*0.15}px ${SANS}`;
-  arcText(ctx, "BROWNSEA ISLAND", cx, cy, r*0.86, -Math.PI/2, r*0.04);
+  arcText(ctx, "BROWNSEA ISLAND", cx, cy, r*0.86, -Math.PI/2, r*0.04, true);
+  ctx.font = `700 ${r*0.14}px ${SANS}`;
+  arcText(ctx, "1907 • 2027", cx, cy, r*0.86, Math.PI/2, r*0.05, false);
   ctx.restore();
 }
 
@@ -1304,7 +1329,7 @@ function drawProfileCard(ctx, W, H, st, id, pt, head){
   ctx.save();
   ctx.fillStyle = plateInk;
   ctx.font = `700 ${S*0.078}px ${SERIF}`;
-  arcText(ctx, pt.name.toUpperCase(), cx, cy, innerR + S*0.082, Math.PI/2, S*0.010);
+  arcText(ctx, pt.name.toUpperCase(), cx, cy, innerR + S*0.082, Math.PI/2, S*0.010, false);
   ctx.restore();
 
   /* Animal to the left of the name, Scouts fleur to the right. Angle increases
@@ -1339,6 +1364,10 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
      type sizes, so it spent its extra height on empty margin instead of on
      legibility. */
   const k = story ? 1.22 : 1;
+  /* Spacing and type size are scaled separately. The story has a third more
+     height to spend, but the glyphs share a 1080 canvas with the post, so
+     type grows by less than the gaps between lines do. */
+  const kt = story ? 1.12 : 1;
 
   if(st.img){
     drawPhoto(ctx, st.img, 0, 0, W, photoH, st);
@@ -1377,8 +1406,24 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
   const LINE = {eyebrow:0, name:0.116*k, tagline:0.170*k, rule:0.202*k,
                 traits:0.248*k, dates:0.288*k, url:0.344*k};
   const topY = H - footRoom - W*LINE.url;
-  const narrowW = W - pad*2 - stampR*2.5;   /* the eyebrow runs beside the stamp */
   const wideW = W - pad*2;
+
+  /* How far right a line may run before it meets the roundel. The roundel is
+     a disc, so this depends on the line's own height: the eyebrow sits beside
+     its widest part and the name well below it, where there is more room.
+     A fixed exclusion left the eyebrow 20px clear of the disc on a 1080 card,
+     a quarter of the page margin, which reads as a crash even though nothing
+     actually overlaps. */
+  const discCx = W - pad - stampR, discCy = panelTop + W*0.012, discR = stampR*1.34;
+  const AIR = W*0.06;
+  function roomFor(baseline, capH){
+    let left = W;
+    for(const y of [baseline - capH, baseline]){
+      const dy = Math.abs(y - discCy);
+      if(dy < discR) left = Math.min(left, discCx - Math.sqrt(discR*discR - dy*dy));
+    }
+    return Math.max(W*0.32, Math.min(wideW, left - AIR - pad));
+  }
   const eyebrow = ("I'm " + pt.one + " — which patrol are you?").toUpperCase();
   const traits = pt.traits.join("  ·  ").toUpperCase();
   const dates = "BROWNSEA ISLAND 1907  →  GDAŃSK 2027";
@@ -1405,18 +1450,21 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
 
   ctx.fillStyle = NAVY;
   ctx.globalAlpha = 0.8;
-  fitFont(ctx, eyebrow, narrowW, W*0.029, 800, SANS);
-  ctx.fillText(eyebrow, pad, topY + W*LINE.eyebrow);
+  const ebY = topY + W*LINE.eyebrow, ebCap = W*0.029*kt;
+  fitFont(ctx, eyebrow, roomFor(ebY, ebCap), ebCap, 800, SANS);
+  ctx.fillText(eyebrow, pad, ebY);
   ctx.globalAlpha = 1;
 
   ctx.fillStyle = PATROL_INK[id];
-  fitFont(ctx, pt.name, wideW*0.75, W*0.125, 700, SERIF);
-  ctx.fillText(pt.name, pad, topY + W*LINE.name);
+  const nameY = topY + W*LINE.name, nameCap = W*0.125*kt;
+  fitFont(ctx, pt.name, roomFor(nameY, nameCap), nameCap, 700, SERIF);
+  ctx.fillText(pt.name, pad, nameY);
 
   ctx.fillStyle = NAVY;
   ctx.globalAlpha = 0.9;
-  fitFont(ctx, pt.tagline, wideW, W*0.038, 600, SANS);
-  ctx.fillText(pt.tagline, pad, topY + W*LINE.tagline);
+  const tagY = topY + W*LINE.tagline, tagCap = W*0.038*kt;
+  fitFont(ctx, pt.tagline, roomFor(tagY, tagCap), tagCap, 600, SANS);
+  ctx.fillText(pt.tagline, pad, tagY);
   ctx.globalAlpha = 1;
 
   ctx.strokeStyle = "rgba(27,53,121,0.2)";
@@ -1428,10 +1476,11 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
 
   ctx.fillStyle = NAVY;
   ctx.globalAlpha = 0.72;
-  fitFont(ctx, traits, wideW, W*0.026, 800, SANS);
-  ctx.fillText(traits, pad, topY + W*LINE.traits);
-  fitFont(ctx, dates, wideW, W*0.026, 700, SANS);
-  ctx.fillText(dates, pad, topY + W*LINE.dates);
+  const trY = topY + W*LINE.traits, dtY = topY + W*LINE.dates, smallCap = W*0.026*kt;
+  fitFont(ctx, traits, roomFor(trY, smallCap), smallCap, 800, SANS);
+  ctx.fillText(traits, pad, trY);
+  fitFont(ctx, dates, roomFor(dtY, smallCap), smallCap, 700, SANS);
+  ctx.fillText(dates, pad, dtY);
 
   ctx.globalAlpha = 1;
 
@@ -1439,7 +1488,7 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
      patrols without needing a colour that happens to suit one of them, and it
      reads as somewhere to go rather than a footnote. */
   const url = cardUrlLine();
-  const urlSize = W*0.034*k;
+  const urlSize = W*0.034*kt;
   ctx.font = `800 ${urlSize}px ${SANS}`;
   const urlW = ctx.measureText(url).width;
   const padX = W*0.030, padY = W*0.019;

@@ -3,7 +3,7 @@
 
    Bump CACHE whenever index.html changes, or returning visitors keep the old copy
    until the network check succeeds. The Publish workflow does not do this for you. */
-const CACHE = 'patrolfinder-v9';
+const CACHE = 'patrolfinder-v10';
 
 /* Relative so this works at /patrolfinder/ on Pages and at / on any other host. */
 const SHELL = [
