@@ -92,6 +92,10 @@
   }
   body.result-mode .ribbon{display:block}
   body.result-curlews .ribbon{background:rgba(27,53,121,.9)}
+  /* Not on the card studio. Its banner is a full-width white bar hard against
+     the top, so the white ribbon runs into it and the two read as one torn
+     shape rather than two deliberate ones. */
+  body.studio-mode .ribbon{display:none}
 
   .wrap{
     position:relative;z-index:1;flex:1;
@@ -383,9 +387,10 @@
   /* Full-strength navy: at this size a faded tint drops under 4.5:1. */
   .segrow .segsub{font-weight:700;color:#3B4E86}
   .segrow button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
-  .zoomrow{display:flex;align-items:center;gap:10px;margin-top:12px}
-  .zoomrow label{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
-  .zoomrow input[type=range]{flex:1;min-height:44px;accent-color:var(--red)}
+  /* The zoom slider is gone: the picture is pinched and dragged directly.
+     The canvas takes focus so the keyboard can still do both. */
+  .stagewrap:focus-within{outline:3px solid var(--red);outline-offset:3px}
+  .stagewrap canvas:focus{outline:none}
   .photorow{display:flex;flex-direction:column;gap:8px;margin-top:12px}
   .filebtn{
     display:flex;align-items:center;justify-content:center;gap:10px;
@@ -416,10 +421,14 @@
   /* ============================================================
      PATROL LOG — the public wall
      ============================================================ */
-  .logfilter{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+  /* All five on one row. They share the width equally rather than each taking
+     what its word needs, so "Curlews" sets the size and the rest match it;
+     wrapping put Ravens on a line of its own at every phone width. */
+  .logfilter{display:flex;flex-wrap:nowrap;gap:5px;margin:14px 0 4px}
   .logfilter button{
-    min-height:44px;padding:8px 14px;cursor:pointer;
-    font-family:var(--sans);font-size:.78rem;font-weight:800;
+    flex:1 1 0;min-width:0;white-space:nowrap;
+    min-height:44px;padding:8px 4px;cursor:pointer;
+    font-family:var(--sans);font-size:.72rem;font-weight:800;
     color:var(--navy);background:#fff;border:2px solid var(--sky-line);border-radius:99px;
   }
   .logfilter button[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);color:#fff}
@@ -428,24 +437,22 @@
   .logcard{position:relative;border-radius:12px;overflow:hidden;background:#fff;
     border:2px solid var(--sky-line);aspect-ratio:1/1}
   .logcard img{width:100%;height:100%;object-fit:cover;display:block}
-  .logcard span{
-    position:absolute;left:6px;bottom:6px;padding:3px 8px;border-radius:99px;
-    font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;
-  }
-  .logcard .p-wolves{background:var(--wolves)}
-  .logcard .p-bulls{background:var(--bulls)}
-  .logcard .p-curlews{background:var(--curlews);color:var(--navy)}
-  .logcard .p-ravens{background:var(--ravens)}
-  /* The whole 44px box stays tappable; only the content box is painted, so
-     the pill reads as a small label rather than a lid over the corner of the
-     card. background-clip must come after the background shorthand, which
-     resets it. */
+  /* No patrol label over the picture. The card already says its patrol, in
+     its own type, and the pill landed straight on the word. */
+
+  /* The button is a transparent 44px target; the pill is the span inside it,
+     which can carry its own padding. Painting the button's own background and
+     clipping it to the content box gave a pill exactly as wide as the word,
+     so the rounded ends cut into the R and the T. */
   .reportbtn{
-    position:absolute;right:0;top:0;min-height:44px;min-width:44px;padding:13px 12px;cursor:pointer;
-    line-height:1;
-    font-family:var(--sans);font-size:.56rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
-    color:#fff;background:rgba(27,53,121,.78);border:0;border-radius:99px;
-    background-clip:content-box;
+    position:absolute;right:0;top:0;min-height:44px;min-width:44px;
+    display:flex;align-items:flex-start;justify-content:flex-end;
+    padding:7px;cursor:pointer;background:none;border:0;
+  }
+  .reportbtn span{
+    padding:5px 10px;border-radius:99px;line-height:1;
+    font-family:var(--sans);font-size:.62rem;font-weight:800;letter-spacing:.06em;
+    text-transform:uppercase;color:#fff;background:rgba(27,53,121,.82);
   }
   .reportbtn:focus-visible{outline:3px solid var(--red);outline-offset:2px}
   .logempty{margin-top:18px;font-size:.95rem;font-weight:600;line-height:1.5;opacity:.9}
@@ -1080,6 +1087,9 @@ function drawHead(ctx, img, colour, x, y, w, h, alpha){
    routine draws the small on-screen preview and the full-size
    export with no second layout.
    ============================================================ */
+/* The slider's old max. Past about three the photo is mush at card size. */
+const ZOOM_MAX = 3;
+
 const FORMATS = {
   profile:{ w:1080, h:1080, label:"Profile picture", sub:"Square",
             note:"Sized for a round profile picture. Everything important sits inside the circle." },
@@ -1505,8 +1515,6 @@ async function openPhoto(file){
     studio.img = img;
     studio.zoom = 1; studio.ox = 0; studio.oy = 0;
     paintPreview();
-    const z = document.getElementById("zoom");
-    if(z){ z.value = "1"; z.disabled = false; }
     const rm = document.getElementById("removePhoto");
     if(rm) rm.hidden = false;
     toast("Photo loaded. It stays on this device.");
@@ -1902,14 +1910,15 @@ async function renderCardStudio(id, keep){
   const [head, fleur] = await Promise.all([loadHead(id), loadFleur()]);
   studio = keep && keep.patrol === id ? keep : newStudioState(id, head, fleur);
   toTop();
-  document.body.className = "result-mode result-" + id;
+  document.body.className = "result-mode studio-mode result-" + id;
 
   app.innerHTML = `
     <div class="screen studio">
       <h1 class="banner centered">Your ${esc(pt.name)} card</h1>
 
       <div class="card">
-        <div class="stagewrap"><canvas id="stage" width="540" height="540" aria-label="Preview of your ${esc(pt.name)} card"></canvas></div>
+        <div class="stagewrap"><canvas id="stage" width="540" height="540" tabindex="0"
+             aria-label="Preview of your ${esc(pt.name)} card. With a photo added, drag to move it and pinch, scroll or press plus and minus to zoom."></canvas></div>
         <p class="stagenote" id="stageNote"></p>
 
         <div class="segrow" role="group" aria-label="Card shape">
@@ -1927,11 +1936,7 @@ async function renderCardStudio(id, keep){
           <button class="linkbtn" id="removePhoto" hidden>Take the photo back off</button>
         </div>
 
-        <div class="zoomrow">
-          <label for="zoom">Zoom</label>
-          <input type="range" id="zoom" min="1" max="3" step="0.01" value="1" disabled aria-label="Zoom the photo">
-        </div>
-        <p class="micro">Drag the picture to move it around. No photo? The card works on its own.</p>
+        <p class="micro">Drag the picture to move it, pinch to zoom. No photo? The card works on its own.</p>
 
         <div class="privacy">
           <b>Your photo stays on your phone.</b> The card is put together here, inside this page,
@@ -1970,8 +1975,6 @@ async function renderCardStudio(id, keep){
     </div>`;
 
   if(studio.img){
-    document.getElementById("zoom").disabled = false;
-    document.getElementById("zoom").value = String(studio.zoom);
     document.getElementById("removePhoto").hidden = false;
     document.getElementById("fileLabel").textContent = "Use a different photo";
   }
@@ -1984,14 +1987,8 @@ async function renderCardStudio(id, keep){
   });
   document.getElementById("removePhoto").addEventListener("click", (e)=>{
     studio.img = null; studio.zoom = 1; studio.ox = 0; studio.oy = 0;
-    document.getElementById("zoom").value = "1";
-    document.getElementById("zoom").disabled = true;
     document.getElementById("fileLabel").textContent = "Add a photo";
     e.target.hidden = true;
-    paintPreview();
-  });
-  document.getElementById("zoom").addEventListener("input", (e)=>{
-    studio.zoom = parseFloat(e.target.value) || 1;
     paintPreview();
   });
   app.querySelectorAll(".segrow button").forEach(b=>{
@@ -2002,25 +1999,95 @@ async function renderCardStudio(id, keep){
     });
   });
 
-  /* Drag to reframe. Pointer events cover mouse, touch and pencil in one go. */
+  /* Reframe on the picture itself: one finger drags, two pinch. A slider
+     underneath was the thing people missed, because the picture is what they
+     reach for. The canvas already sets touch-action:none, so the browser
+     hands over both fingers instead of zooming the page.
+
+     Every gesture is measured from a baseline taken when the number of
+     fingers changes, so lifting one finger out of a pinch carries on panning
+     from where it is rather than jumping. */
   const stage = document.getElementById("stage");
-  let drag = null;
+  const pointers = new Map();
+  let base = null;
+
+  const clampZoom = (z)=> Math.min(ZOOM_MAX, Math.max(1, z));
+  const spread = (a, b)=> Math.hypot(a.x - b.x, a.y - b.y);
+  function midpoint(){
+    const pts = [...pointers.values()];
+    let x = 0, y = 0;
+    for(const p of pts){ x += p.x; y += p.y; }
+    return {x: x/pts.length, y: y/pts.length, n: pts.length, pts: pts};
+  }
+  function rebase(){
+    if(!studio.img || !pointers.size){ base = null; return; }
+    const m = midpoint();
+    const r = stage.getBoundingClientRect();
+    base = {
+      x: m.x, y: m.y, w: r.width, h: r.height,
+      dist: m.n > 1 ? spread(m.pts[0], m.pts[1]) : 0,
+      ox: studio.ox, oy: studio.oy, zoom: studio.zoom
+    };
+  }
+
   stage.addEventListener("pointerdown", (e)=>{
     if(!studio.img) return;
-    drag = {x:e.clientX, y:e.clientY, ox:studio.ox, oy:studio.oy};
-    stage.setPointerCapture(e.pointerId);
+    /* Capture keeps hold of a finger that slides off the canvas mid-gesture.
+       It throws if the pointer has already lifted, and that must not stop the
+       rest of this handler running or the gesture starts with no baseline. */
+    try{ stage.setPointerCapture(e.pointerId); }catch(_){}
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    rebase();
     stage.classList.add("dragging");
   });
   stage.addEventListener("pointermove", (e)=>{
-    if(!drag) return;
-    const r = stage.getBoundingClientRect();
-    studio.ox = drag.ox + (e.clientX - drag.x) / r.width;
-    studio.oy = drag.oy + (e.clientY - drag.y) / r.height;
+    if(!base || !pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    const m = midpoint();
+    if(m.n > 1 && base.dist > 0){
+      studio.zoom = clampZoom(base.zoom * spread(m.pts[0], m.pts[1]) / base.dist);
+    }
+    studio.ox = base.ox + (m.x - base.x) / base.w;
+    studio.oy = base.oy + (m.y - base.y) / base.h;
     paintPreview();
   });
-  const endDrag = ()=>{ drag = null; stage.classList.remove("dragging"); };
-  stage.addEventListener("pointerup", endDrag);
-  stage.addEventListener("pointercancel", endDrag);
+  const lift = (e)=>{
+    if(!pointers.delete(e.pointerId)) return;
+    if(pointers.size) rebase();
+    else { base = null; stage.classList.remove("dragging"); }
+  };
+  stage.addEventListener("pointerup", lift);
+  stage.addEventListener("pointercancel", lift);
+
+  /* No second finger on a laptop. A trackpad pinch arrives here too. */
+  stage.addEventListener("wheel", (e)=>{
+    if(!studio.img) return;
+    e.preventDefault();
+    studio.zoom = clampZoom(studio.zoom * Math.exp(-e.deltaY * 0.0016));
+    paintPreview();
+  }, {passive:false});
+
+  /* Neither gesture reaches a keyboard, and losing the slider would otherwise
+     have taken zoom away from anyone using one. */
+  stage.addEventListener("keydown", (e)=>{
+    if(!studio.img) return;
+    const step = 0.08, pan = 0.04;
+    const moves = {
+      ArrowLeft:  ()=>studio.ox -= pan,
+      ArrowRight: ()=>studio.ox += pan,
+      ArrowUp:    ()=>studio.oy -= pan,
+      ArrowDown:  ()=>studio.oy += pan,
+      "+":        ()=>studio.zoom = clampZoom(studio.zoom + step),
+      "=":        ()=>studio.zoom = clampZoom(studio.zoom + step),
+      "-":        ()=>studio.zoom = clampZoom(studio.zoom - step),
+      _:          ()=>studio.zoom = clampZoom(studio.zoom - step)
+    };
+    const fn = moves[e.key];
+    if(!fn) return;
+    e.preventDefault();
+    fn();
+    paintPreview();
+  });
 
   document.getElementById("saveBtn").addEventListener("click", saveCard);
   document.getElementById("shareCardBtn").addEventListener("click", async (e)=>{
@@ -2088,8 +2155,7 @@ async function renderLog(fromPatrol){
     body.innerHTML = `<div class="loggrid">${shown.map(i=>`
       <figure class="logcard" data-id="${esc(i.id)}">
         <img src="${esc(i.url)}" alt="A ${esc(PATROLS[i.patrol] ? PATROLS[i.patrol].name : i.patrol)} card someone shared" loading="lazy">
-        <span class="p-${esc(i.patrol)}">${esc(PATROLS[i.patrol] ? PATROLS[i.patrol].name : i.patrol)}</span>
-        <button class="reportbtn" data-report="${esc(i.id)}">Report</button>
+        <button class="reportbtn" data-report="${esc(i.id)}"><span>Report</span></button>
       </figure>`).join("")}</div>`;
     body.querySelectorAll("[data-report]").forEach(b=>{
       b.addEventListener("click", ()=>reportPhoto(b.dataset.report, b.closest(".logcard")));
