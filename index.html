@@ -1403,9 +1403,13 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
   /* One baseline rhythm, measured down from the top of the text block, scaled
      per format. The eyebrow sits well clear of the name now: at 4:5 the two
      were close enough to read as one crowded block. */
+  /* The link is no longer a line in this stack - it sits in the bottom right
+     corner - so the block ends at the dates and drops by the height the link
+     used to take. That is what pulls the eyebrow clear of the torn edge,
+     which wobbles by W*0.026 and could reach it. */
   const LINE = {eyebrow:0, name:0.116*k, tagline:0.170*k, rule:0.202*k,
-                traits:0.248*k, dates:0.288*k, url:0.344*k};
-  const topY = H - footRoom - W*LINE.url;
+                traits:0.248*k, dates:0.288*k};
+  const topY = H - footRoom - W*LINE.dates;
   const wideW = W - pad*2;
 
   /* How far right a line may run before it meets the roundel. The roundel is
@@ -1431,6 +1435,22 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
   ctx.save();
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
+
+  /* Measured before anything else is drawn, because the two lines that end up
+     beside it have to know how much width it leaves them. */
+  const url = cardUrlLine();
+  const urlSize = W*0.034;
+  ctx.font = `800 ${urlSize}px ${SANS}`;
+  const urlW = ctx.measureText(url).width;
+  const urlPadX = W*0.030, urlPadY = W*0.019;
+  const pillW = urlW + urlPadX*2, pillH = urlSize + urlPadY*2;
+  const pillX = W - pad - pillW;
+  /* Sat on the bottom two lines rather than under them: it is a corner badge
+     now, not the last line of the stack. Centred on their ink rather than on
+     their baselines, which sit a half cap-height low. */
+  const pillMid = topY + W*(LINE.traits + LINE.dates)/2 - W*0.026*kt/2;
+  const pillY = pillMid - pillH/2;
+  const beside = Math.max(W*0.32, pillX - W*0.045 - pad);
 
   /* The wall card is looked at about 170px wide in a grid of them. Only the
      patrol name and the animal survive at that size, so it carries those and
@@ -1477,31 +1497,27 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
   ctx.fillStyle = NAVY;
   ctx.globalAlpha = 0.72;
   const trY = topY + W*LINE.traits, dtY = topY + W*LINE.dates, smallCap = W*0.026*kt;
-  fitFont(ctx, traits, roomFor(trY, smallCap), smallCap, 800, SANS);
+  fitFont(ctx, traits, Math.min(beside, roomFor(trY, smallCap)), smallCap, 800, SANS);
   ctx.fillText(traits, pad, trY);
-  fitFont(ctx, dates, roomFor(dtY, smallCap), smallCap, 700, SANS);
+  fitFont(ctx, dates, Math.min(beside, roomFor(dtY, smallCap)), smallCap, 700, SANS);
   ctx.fillText(dates, pad, dtY);
 
   ctx.globalAlpha = 1;
 
   /* A pill rather than another line of small type. It contrasts on all four
      patrols without needing a colour that happens to suit one of them, and it
-     reads as somewhere to go rather than a footnote. */
-  const url = cardUrlLine();
-  const urlSize = W*0.034*kt;
+     reads as somewhere to go rather than a footnote. In the bottom right
+     corner it also stops being something the eye has to step over on its way
+     down the block. */
   ctx.font = `800 ${urlSize}px ${SANS}`;
-  const urlW = ctx.measureText(url).width;
-  const padX = W*0.030, padY = W*0.019;
-  const pillH = urlSize + padY*2;
-  const pillY = topY + W*LINE.url - urlSize*0.78 - padY;
   ctx.fillStyle = PATROL_HEX[id];
   if(ctx.roundRect){
-    ctx.beginPath(); ctx.roundRect(pad, pillY, urlW + padX*2, pillH, pillH/2); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(pillX, pillY, pillW, pillH, pillH/2); ctx.fill();
   }else{
-    ctx.fillRect(pad, pillY, urlW + padX*2, pillH);
+    ctx.fillRect(pillX, pillY, pillW, pillH);
   }
   ctx.fillStyle = onFlood(id);
-  ctx.fillText(url, pad + padX, pillY + padY + urlSize*0.78);
+  ctx.fillText(url, pillX + urlPadX, pillY + urlPadY + urlSize*0.78);
   ctx.restore();
 }
 
