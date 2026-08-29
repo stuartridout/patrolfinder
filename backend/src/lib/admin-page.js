@@ -83,6 +83,7 @@ const ADMIN_HTML = `<!DOCTYPE html>
      whole subtree, so the red "lopsided" flag inside it cannot climb back out
      to full strength and lands at 3.2:1. */
   .bal h3{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#5F72A1;margin-bottom:6px}
+  .eratitle{margin:22px 0 6px;font-size:.82rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#1B3579}
   .balbar{display:flex;height:14px;border-radius:99px;overflow:hidden;background:rgba(27,53,121,.1)}
   .balbar i{display:block;height:100%}
   .ballegend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-size:.72rem;font-weight:700}
@@ -448,14 +449,33 @@ function paintBalance(s){
     box.innerHTML = '<p class="empty">No finished quizzes yet. Runs are recorded from the moment somebody completes the quiz.</p>';
     return;
   }
-  var html = bar(s.picks || {}, "Every answer, all questions", true);
-  (s.byQuestion || []).forEach(function(q, i){
-    html += bar(q || {}, "Question " + (i + 1), true);
-  });
+  /* Overall first, then one block per question set. The per-question bars are
+     only meaningful within a set: question three in 1907 is a different
+     question from question three today, so averaging them says nothing. */
+  var html = bar(s.picks || {}, "Every answer, both sets", true);
+
+  var eras = s.byEra || {};
+  var names = Object.keys(eras).sort();
+  if(names.length){
+    names.forEach(function(name){
+      var e = eras[name] || {};
+      html += '<h4 class="eratitle">' + (name || 'question set not recorded') +
+              ' &middot; ' + e.runs + ' quiz' + (e.runs === 1 ? '' : 'zes') + '</h4>';
+      html += bar(e.picks || {}, "Every answer", true);
+      (e.byQuestion || []).forEach(function(q, i){
+        html += bar(q || {}, "Question " + (i + 1), true);
+      });
+    });
+  }else{
+    (s.byQuestion || []).forEach(function(q, i){
+      html += bar(q || {}, "Question " + (i + 1), true);
+    });
+  }
+
   html += '<p class="micro" style="margin-top:14px;font-size:.78rem;opacity:.8">' +
     s.runs + ' finished quiz' + (s.runs === 1 ? '' : 'zes') +
     (s.ties ? ', ' + s.ties + ' of them settled by a tie-break' : ', none needing a tie-break') +
-    '. Download the CSV above for the per-run detail.</p>';
+    '. Download the CSV above for the per-run detail; it carries the question set on every row.</p>';
   box.innerHTML = html;
 }
 

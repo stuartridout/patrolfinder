@@ -22,7 +22,7 @@
  *   POST /console/delete       {id} gone, file and all
  *   GET  /console/stats        counts and sign-up total
  *   GET  /console/signups.csv  the sign-up list
- *   GET  /console/runs.csv     every quiz run: answers, scores, patrol
+ *   GET  /console/runs.csv     every quiz run: era, answers, scores, patrol
  *   POST /console/purge        delete every photo now
  *   POST /console/reset        {what: tally|signups|photos|all} start clean
  *
@@ -153,8 +153,12 @@ async function handler(request, context){
       const scores = {};
       for(const p of store.PATROLS) scores[p] = Number((body.scores || {})[p]) || 0;
       const tied = Array.isArray(body.tied) ? body.tied.filter(t => store.PATROLS.includes(t)) : [];
+      /* A short slug naming which question set this run came from, matched by
+         shape rather than against a list, so adding a set to the app does not
+         need a matching deploy here. */
+      const era = /^[a-z0-9-]{1,12}$/.test(String(body.era || "")) ? String(body.era) : "";
       try{
-        await store.addRun({patrol: patrol, answers: answers, scores: scores, tied: tied});
+        await store.addRun({patrol: patrol, answers: answers, scores: scores, tied: tied, era: era});
       }catch(err){
         context.error("run not recorded", err);
       }
@@ -283,22 +287,35 @@ async function handler(request, context){
       /* How often each patrol was picked across every answer, and per
          question. A quiz that favours a patrol shows up here before it shows
          up in the tally. */
-      const picks = {};
-      for(const p of store.PATROLS) picks[p] = 0;
-      const byQuestion = [];
-      let ties = 0;
+      /* Also split by question set. The overall figures answer "is one patrol
+         handed out too often"; only the per-set figures can answer "by which
+         question", because the sets ask different ones in the same slots. */
+      const blank = () => {
+        const o = {runs: 0, ties: 0, picks: {}, byQuestion: []};
+        for(const p of store.PATROLS) o.picks[p] = 0;
+        return o;
+      };
+      const all = blank();
+      const byEra = {};
       for(const r of runs){
-        if(r.tied) ties++;
+        const bucket = byEra[r.era] || (byEra[r.era] = blank());
+        for(const b of [all, bucket]){
+          b.runs++;
+          if(r.tied) b.ties++;
+        }
         r.answers.forEach((a, i) => {
-          if(!(a in picks)) return;
-          picks[a]++;
-          if(!byQuestion[i]){ byQuestion[i] = {}; for(const p of store.PATROLS) byQuestion[i][p] = 0; }
-          byQuestion[i][a]++;
+          if(!(a in all.picks)) return;
+          for(const b of [all, bucket]){
+            b.picks[a]++;
+            if(!b.byQuestion[i]){ b.byQuestion[i] = {}; for(const p of store.PATROLS) b.byQuestion[i][p] = 0; }
+            b.byQuestion[i][a]++;
+          }
         });
       }
       return json({
         tally: tally, signups: signups.length, photos: byStatus,
-        runs: runs.length, ties: ties, picks: picks, byQuestion: byQuestion,
+        runs: all.runs, ties: all.ties, picks: all.picks, byQuestion: all.byQuestion,
+        byEra: byEra,
         reunionEnds: reunionEnds(), deletedAfter: new Date(cutoffMs()).toISOString()
       });
     }
@@ -306,12 +323,12 @@ async function handler(request, context){
     if(path === "/console/runs.csv" && request.method === "GET"){
       const runs = await store.listRuns();
       const width = runs.reduce((n, r) => Math.max(n, r.answers.length), 0);
-      const head = ["when"]
+      const head = ["when", "era"]
         .concat(Array.from({length: width}, (_, i) => "q" + (i + 1)))
         .concat(store.PATROLS.map(p => "score_" + p))
         .concat(["patrol", "tied"]);
       const csv = [head.join(",")].concat(runs.map(r => {
-        const cells = [new Date(r.created).toISOString()];
+        const cells = [new Date(r.created).toISOString(), r.era];
         for(let i = 0; i < width; i++) cells.push(r.answers[i] || "");
         for(const p of store.PATROLS) cells.push(r.scores[p]);
         cells.push(r.patrol, r.tied ? '"' + r.tied + '"' : "");
