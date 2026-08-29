@@ -329,9 +329,17 @@
   /* Two tall blocks side by side rather than a stack: equal choices, read in
      one glance, and one row of height instead of two. */
   .erahead{text-align:center;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.75;margin-bottom:6px}
+  /* The three parts of the choice - the label, the two buttons, the line that
+     says how long it takes - are one group and read as one, so they are spaced
+     against the room the screen has rather than pinned together. The block is
+     anchored to the bottom, so growing the gaps is what lifts the label off
+     the buttons and up into the space above. */
+  .intro .erahead{font-size:.84rem;opacity:.8;margin-bottom:clamp(8px,4.2vh,42px)}
+  .intro .microcopy{margin-top:clamp(10px,4.4vh,44px)}
+  .intro .ibottom #logBtn{margin-top:clamp(10px,2.6vh,26px)}
   .erapick{display:flex;gap:10px}
   .erapick .btn.primary{
-    flex:1 1 0;min-width:0;min-height:104px;
+    flex:1 1 0;min-width:0;min-height:clamp(104px,13.5vh,132px);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
     padding:14px 8px;font-size:clamp(1.06rem,4.6vw,1.32rem);line-height:1.18;border-radius:10px;
   }
@@ -349,10 +357,10 @@
     .intro .postmark-intro{width:clamp(70px,22vw,92px);margin-top:8px}
     .intro .sub{font-size:.95rem;line-height:1.4;margin-top:8px}
     .intro .stampnote{font-size:.74rem;line-height:1.4;margin-top:4px}
-    .intro .erahead{margin-bottom:4px}
+    .intro .erahead{font-size:.78rem;margin-bottom:4px}
     .erapick .btn.primary{min-height:84px}
     .intro .microcopy{margin-top:6px}
-    .ibottom #logBtn{margin-top:8px;padding:13px 16px}
+    .intro .ibottom #logBtn{margin-top:8px;padding:13px 16px}
   }
 
   .ibottom{margin-top:auto}
