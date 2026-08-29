@@ -900,7 +900,7 @@ function paintTally(mine){
     <div class="tallykey">
       ${segs.map(s=>`<span class="${s.p===mine?"me":""}"><i class="seg-${s.p}" style="background:${PATROL_HEX[s.p]}"></i>${PATROLS[s.p].name} <b>${Math.round(s.pct)}%</b></span>`).join("")}
     </div>
-    <p class="micro">${total.toLocaleString("en-GB")} ${total === 1 ? "patrol" : "patrols"} found so far. We keep the answers people gave, so we can check the quiz is fair. Nothing that says who gave them.</p>`;
+    <p class="micro">${total.toLocaleString("en-GB")} ${total === 1 ? "patrol" : "patrols"} found so far. Nothing we keep can identify you: just the answers themselves, so we can check the quiz is fair.</p>`;
 }
 
 /* ============================================================
