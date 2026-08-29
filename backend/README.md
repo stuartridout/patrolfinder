@@ -15,9 +15,19 @@ in the MK Scouts tenant.
 
 | Thing | Kept | Not kept |
 |---|---|---|
-| Tally | four running counts | which answers led there, when, or who |
+| Tally | four running counts | who, or when |
+| Quiz run | the seven answers, the four scores, the patrol, any tie-break, the time | anything about the person: no name, no IP, no device, no session |
 | Sign-up | email, patrol, timestamp | anything else |
 | Patrol log | image bytes, patrol, status | name, email, device, location |
+
+A **quiz run** is one row per completed quiz saying which patrol each answer
+pointed at. It exists so the quiz can be checked for bias: if the wording hands
+one patrol out too often, that shows up in the answers long before anyone
+notices it in the results. There is nothing in a run that ties it to a person,
+and the result screen says plainly that the answers are kept and why.
+
+Runs are deleted whenever the counts are reset, since the two are views of the
+same thing and would otherwise disagree.
 
 Photos live in a **private** blob container and are only ever served back
 through the function, so the wall switch and the deletion date actually bite —
@@ -109,8 +119,14 @@ immediately, before any human sees the report, and lands at the top of the
 console. From there: *Put back*, *Take down* (keeps the file, reversible), or
 *Delete* (gone).
 
-**Numbers.** The tally, the sign-up count, how many cards are up, and a CSV of
-the sign-up list.
+**Numbers.** The tally, the sign-up count, how many cards are up, how many
+quiz runs are recorded, and CSV exports of the sign-ups and of every run.
+
+**Is the quiz balanced?** How often each patrol was chosen, overall and per
+question, as four bars. Even bars mean no patrol is being handed out by the
+wording. Anything above 40% or below 12% of a bar is marked *lopsided*, which
+is the question to go and read. The runs CSV has the per-run detail if you want
+to pivot it properly.
 
 **Start clean.** Behind a typed confirmation: delete every photo, reset the
 four counts, clear the sign-up list, or all three. Use it to clear up after
@@ -125,7 +141,7 @@ Public:
 |---|---|---|
 | GET | `/config` | which features are switched on |
 | GET | `/tally` | the four counts |
-| POST | `/tally` | `{patrol}` — increment |
+| POST | `/tally` | `{patrol}` — increment. Optional `answers`, `scores`, `tied` record the run |
 | POST | `/email` | `{email, patrol}` |
 | GET | `/photos` | cards on the wall |
 | POST | `/photos` | multipart `patrol` + `photo` |
@@ -145,8 +161,9 @@ before a request reaches the app.
 | POST | `/console/approve` `/console/hide` `/console/delete` | `{id}` |
 | GET | `/console/stats` | counts and sign-up total |
 | GET | `/console/signups.csv` | the sign-up list |
+| GET | `/console/runs.csv` | every quiz run: answers, scores, patrol, tie-break |
 | POST | `/console/purge` | delete every photo now |
-| POST | `/console/reset` | `{what: tally\|signups\|photos\|all}` — start clean |
+| POST | `/console/reset` | `{what: tally\|runs\|signups\|photos\|all}` — start clean |
 
 ## Deletion
 

@@ -22,6 +22,7 @@
  *   POST /console/delete       {id} gone, file and all
  *   GET  /console/stats        counts and sign-up total
  *   GET  /console/signups.csv  the sign-up list
+ *   GET  /console/runs.csv     every quiz run: answers, scores, patrol
  *   POST /console/purge        delete every photo now
  *   POST /console/reset        {what: tally|signups|photos|all} start clean
  *
@@ -141,6 +142,23 @@ async function handler(request, context){
     const patrol = String(body.patrol || "");
     if(!store.PATROLS.includes(patrol)) return json({error: "unknown patrol"}, 400);
     await store.bumpTally(patrol);
+
+    /* The run is optional and its failure must not cost the count, which is
+       what the app actually shows people. Answers are validated to the four
+       patrol names, so nothing arbitrary reaches storage. */
+    const answers = Array.isArray(body.answers)
+      ? body.answers.slice(0, 12).map(a => store.PATROLS.includes(a) ? a : "")
+      : null;
+    if(answers && answers.some(Boolean)){
+      const scores = {};
+      for(const p of store.PATROLS) scores[p] = Number((body.scores || {})[p]) || 0;
+      const tied = Array.isArray(body.tied) ? body.tied.filter(t => store.PATROLS.includes(t)) : [];
+      try{
+        await store.addRun({patrol: patrol, answers: answers, scores: scores, tied: tied});
+      }catch(err){
+        context.error("run not recorded", err);
+      }
+    }
     return json(await store.readTally());
   }
 
@@ -256,15 +274,50 @@ async function handler(request, context){
     }
 
     if(path === "/console/stats" && request.method === "GET"){
-      const [tally, signups, rows] = await Promise.all([
-        store.readTally(), store.listSignups(), store.listPhotos()
+      const [tally, signups, rows, runs] = await Promise.all([
+        store.readTally(), store.listSignups(), store.listPhotos(), store.listRuns()
       ]);
       const byStatus = {};
       for(const r of rows) byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+
+      /* How often each patrol was picked across every answer, and per
+         question. A quiz that favours a patrol shows up here before it shows
+         up in the tally. */
+      const picks = {};
+      for(const p of store.PATROLS) picks[p] = 0;
+      const byQuestion = [];
+      let ties = 0;
+      for(const r of runs){
+        if(r.tied) ties++;
+        r.answers.forEach((a, i) => {
+          if(!(a in picks)) return;
+          picks[a]++;
+          if(!byQuestion[i]){ byQuestion[i] = {}; for(const p of store.PATROLS) byQuestion[i][p] = 0; }
+          byQuestion[i][a]++;
+        });
+      }
       return json({
         tally: tally, signups: signups.length, photos: byStatus,
+        runs: runs.length, ties: ties, picks: picks, byQuestion: byQuestion,
         reunionEnds: reunionEnds(), deletedAfter: new Date(cutoffMs()).toISOString()
       });
+    }
+
+    if(path === "/console/runs.csv" && request.method === "GET"){
+      const runs = await store.listRuns();
+      const width = runs.reduce((n, r) => Math.max(n, r.answers.length), 0);
+      const head = ["when"]
+        .concat(Array.from({length: width}, (_, i) => "q" + (i + 1)))
+        .concat(store.PATROLS.map(p => "score_" + p))
+        .concat(["patrol", "tied"]);
+      const csv = [head.join(",")].concat(runs.map(r => {
+        const cells = [new Date(r.created).toISOString()];
+        for(let i = 0; i < width; i++) cells.push(r.answers[i] || "");
+        for(const p of store.PATROLS) cells.push(r.scores[p]);
+        cells.push(r.patrol, r.tied ? '"' + r.tied + '"' : "");
+        return cells.join(",");
+      })).join("\n");
+      return raw(csv, {"Content-Type": "text/csv; charset=utf-8", "Cache-Control": "no-store"});
     }
 
     if(path === "/console/signups.csv" && request.method === "GET"){
@@ -301,12 +354,18 @@ async function handler(request, context){
       /* Clearing up after a test run, or starting the day clean. */
       if(path === "/console/reset"){
         const what = String(body.what || "");
-        if(what === "tally" || what === "all") await store.resetTally();
+        if(!["tally", "signups", "photos", "runs", "all"].includes(what)){
+          return json({error: "what must be tally, signups, photos, runs or all"}, 400);
+        }
+        /* The counts and the runs are two views of the same thing, so
+           resetting the counts clears the runs with them. Leaving the runs
+           behind would make the two disagree. */
+        if(what === "tally" || what === "runs" || what === "all"){
+          await store.resetTally();
+          await store.clearRuns();
+        }
         if(what === "signups" || what === "all") await store.clearSignups();
         if(what === "photos" || what === "all") await store.purgeAllPhotos();
-        if(!["tally", "signups", "photos", "all"].includes(what)){
-          return json({error: "what must be tally, signups, photos or all"}, 400);
-        }
         return json({ok: true, reset: what});
       }
     }

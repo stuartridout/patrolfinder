@@ -78,6 +78,18 @@ const ADMIN_HTML = `<!DOCTYPE html>
   .note.err{color:var(--red-ink)}
   .note.ok{color:var(--bulls)}
   .empty{opacity:.7;font-size:.9rem;padding:10px 0}
+  .bal{margin-top:14px}
+  /* A solid colour rather than opacity: opacity on the heading composites the
+     whole subtree, so the red "lopsided" flag inside it cannot climb back out
+     to full strength and lands at 3.2:1. */
+  .bal h3{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#5F72A1;margin-bottom:6px}
+  .balbar{display:flex;height:14px;border-radius:99px;overflow:hidden;background:rgba(27,53,121,.1)}
+  .balbar i{display:block;height:100%}
+  .ballegend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-size:.72rem;font-weight:700}
+  .ballegend span{display:flex;align-items:center;gap:6px}
+  .ballegend i{width:10px;height:10px;border-radius:3px;flex:none}
+  .ballegend b{font-variant-numeric:tabular-nums}
+  .skew{color:var(--red-ink)}
   .danger-zone{border-color:rgba(212,43,32,.4)}
   [hidden]{display:none !important}
 </style>
@@ -133,8 +145,15 @@ const ADMIN_HTML = `<!DOCTYPE html>
       <div class="stats" id="stats"></div>
       <div class="row">
         <button class="quiet" id="csvBtn">Download sign-ups (CSV)</button>
+        <button class="quiet" id="runsBtn">Download quiz runs (CSV)</button>
         <button class="quiet" id="refreshBtn">Refresh</button>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>Is the quiz balanced?</h2>
+      <p class="hint">How often each patrol was chosen, across every answer given. Four roughly equal bars mean no patrol is being handed out by the wording. A question where one patrol runs away with it is the one to look at.</p>
+      <div id="balance"><p class="empty">No finished quizzes yet.</p></div>
     </div>
 
     <div class="card">
@@ -151,13 +170,13 @@ const ADMIN_HTML = `<!DOCTYPE html>
 
     <div class="card danger-zone">
       <h2>Start clean</h2>
-      <p class="hint">For clearing up after testing, or for starting Reunion morning with the day's own numbers. None of it can be undone.</p>
+      <p class="hint">For clearing up after testing, or for starting Reunion morning with the day's own numbers. Resetting the counts deletes the recorded runs with them, so the two never disagree. None of it can be undone.</p>
       <div class="row" style="flex-wrap:nowrap">
         <input type="text" id="purgeConfirm" placeholder="Type CLEAR to arm" aria-label="Type CLEAR to arm">
       </div>
       <div class="row">
         <button class="danger arm" id="purgePhotos" disabled>Delete every photo</button>
-        <button class="danger arm" id="purgeTally" disabled>Reset the counts</button>
+        <button class="danger arm" id="purgeTally" disabled>Reset the counts and runs</button>
         <button class="danger arm" id="purgeSignups" disabled>Clear the sign-ups</button>
       </div>
       <div class="row"><button class="danger arm" id="purgeAll" disabled>All three</button></div>
@@ -399,12 +418,54 @@ function paintFilters(){
 
 /* ---------------- numbers ---------------- */
 
+var PATROL_COLOUR = {wolves:"#2A5CAD", bulls:"#2F7D3F", curlews:"#F5B01E", ravens:"#C02D24"};
+
+function bar(counts, title, flagSkew){
+  var total = PATROLS.reduce(function(n,p){ return n + (counts[p]||0); }, 0);
+  if(!total) return "";
+  var segs = PATROLS.map(function(p){
+    return {p:p, n:counts[p]||0, pct:(counts[p]||0)/total*100};
+  });
+  /* Even would be 25% each. Anything past 40 or under 12 is worth a look, and
+     saying so is more use to a volunteer than a column of percentages. */
+  var skew = flagSkew && segs.some(function(x){ return x.pct > 40 || x.pct < 12; });
+  return '<div class="bal">' +
+    '<h3>' + title + (skew ? ' <span class="skew">&#9679; lopsided</span>' : '') + '</h3>' +
+    '<div class="balbar" role="img" aria-label="' +
+      segs.map(function(x){ return x.p + ' ' + Math.round(x.pct) + ' percent'; }).join(', ') + '">' +
+      segs.map(function(x){ return '<i style="width:' + x.pct.toFixed(1) + '%;background:' + PATROL_COLOUR[x.p] + '"></i>'; }).join('') +
+    '</div>' +
+    '<div class="ballegend">' +
+      segs.map(function(x){
+        return '<span><i style="background:' + PATROL_COLOUR[x.p] + '"></i>' + x.p + ' <b>' + Math.round(x.pct) + '%</b></span>';
+      }).join('') +
+    '</div></div>';
+}
+
+function paintBalance(s){
+  var box = $("balance");
+  if(!s.runs){
+    box.innerHTML = '<p class="empty">No finished quizzes yet. Runs are recorded from the moment somebody completes the quiz.</p>';
+    return;
+  }
+  var html = bar(s.picks || {}, "Every answer, all questions", true);
+  (s.byQuestion || []).forEach(function(q, i){
+    html += bar(q || {}, "Question " + (i + 1), true);
+  });
+  html += '<p class="micro" style="margin-top:14px;font-size:.78rem;opacity:.8">' +
+    s.runs + ' finished quiz' + (s.runs === 1 ? '' : 'zes') +
+    (s.ties ? ', ' + s.ties + ' of them settled by a tie-break' : ', none needing a tie-break') +
+    '. Download the CSV above for the per-run detail.</p>';
+  box.innerHTML = html;
+}
+
 function paintStats(s){
   var total = PATROLS.reduce(function(n, p){ return n + (s.tally[p] || 0); }, 0);
   var bits = [["Quizzes done", total], ["Sign-ups", s.signups]];
   PATROLS.forEach(function(p){ bits.push([p, s.tally[p] || 0]); });
   bits.push(["On the wall", (s.photos && s.photos.approved) || 0]);
   bits.push(["Reported", (s.photos && s.photos.reported) || 0]);
+  bits.push(["Runs recorded", s.runs || 0]);
   $("stats").innerHTML = bits.map(function(b){
     return '<div class="stat"><b>' + b[1] + '</b><span>' + b[0] + '</span></div>';
   }).join("") +
@@ -417,7 +478,11 @@ async function refresh(){
   paintFilters();
   try{
     var [statsRes, photoRes] = await Promise.all([api("/console/stats"), api("/console/photos")]);
-    if(statsRes.ok) paintStats(await statsRes.json());
+    if(statsRes.ok){
+      var stats = await statsRes.json();
+      paintStats(stats);
+      paintBalance(stats);
+    }
     if(photoRes.ok){
       allPhotos = (await photoRes.json()).items || [];
       paintPhotos();
@@ -429,19 +494,25 @@ async function refresh(){
 
 $("refreshBtn").addEventListener("click", refresh);
 
-$("csvBtn").addEventListener("click", async function(){
-  this.disabled = true;
-  try{
-    var res = await api("/console/signups.csv");
-    var blob = await res.blob();
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url; a.download = "wsjpatrol-signups.csv";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-  }catch(e){ alert("Couldn't download the CSV."); }
-  this.disabled = false;
-});
+function wireCsv(id, path, filename){
+  $(id).addEventListener("click", async function(){
+    this.disabled = true;
+    try{
+      var res = await api(path);
+      if(!res.ok) throw new Error("failed");
+      var blob = await res.blob();
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    }catch(e){ alert("Couldn't download the CSV."); }
+    this.disabled = false;
+  });
+}
+
+wireCsv("csvBtn",  "/console/signups.csv", "wsjpatrol-signups.csv");
+wireCsv("runsBtn", "/console/runs.csv",    "wsjpatrol-quiz-runs.csv");
 
 /* ---------------- danger ---------------- */
 
@@ -472,9 +543,9 @@ function wipe(id, what, label){
 }
 
 wipe("purgePhotos",  "photos",  "Delete every photo in the patrol log?");
-wipe("purgeTally",   "tally",   "Reset all four patrol counts to zero?");
+wipe("purgeTally",   "tally",   "Reset all four patrol counts to zero and delete every recorded quiz run?");
 wipe("purgeSignups", "signups", "Delete every email sign-up?");
-wipe("purgeAll",     "all",     "Delete every photo, every sign-up, and reset the counts?");
+wipe("purgeAll",     "all",     "Delete every photo, every sign-up and every quiz run, and reset the counts?");
 
 /* ---------------- boot ---------------- */
 

@@ -682,16 +682,26 @@ function goBack(){
   renderQuestion();
 }
 
-function scoreResult(){
+/* Returns the working, not just the answer: the four scores and whether a tie
+   had to be broken. The result screen only wants the patrol, but the tally
+   sends the rest so the quiz can be checked for bias later. */
+function scoreDetail(){
   const totals = {wolves:0,bulls:0,curlews:0,ravens:0};
   answers.forEach((p,i)=>{ totals[p] += QUESTIONS[i].weight; });
   const max = Math.max(...Object.values(totals));
   const tied = Object.keys(totals).filter(p => totals[p] === max);
-  if(tied.length === 1) return tied[0];
-  if(tied.includes(answers[0])) return answers[0];
-  for(const p of answers){ if(tied.includes(p)) return p; }
-  return tied[0];
+  let patrol = tied[0];
+  if(tied.length === 1){
+    patrol = tied[0];
+  }else if(tied.includes(answers[0])){
+    patrol = answers[0];
+  }else{
+    for(const p of answers){ if(tied.includes(p)){ patrol = p; break; } }
+  }
+  return {patrol: patrol, totals: totals, tied: tied};
 }
+
+function scoreResult(){ return scoreDetail().patrol; }
 
 async function submitEmail(id){
   const input = document.getElementById("emailIn");
@@ -839,15 +849,24 @@ async function loadTally(){
   }catch(_){ return null; }
 }
 
-async function recordOutcome(id){
+async function recordOutcome(id, detail){
   if(tallyCounted) return;          /* one count per finished quiz, not per re-render */
   tallyCounted = true;
   if(!apiUrl("")) return;
   try{
+    /* answers is one patrol per question, in question order, which is exactly
+       what a bias check needs: it says which option was picked without saying
+       anything about who picked it. */
+    const body = {patrol:id};
+    if(detail){
+      body.answers = detail.answers;
+      body.scores = detail.totals;
+      body.tied = detail.tied && detail.tied.length > 1 ? detail.tied : undefined;
+    }
     const res = await fetch(apiUrl("/tally"), {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({patrol:id})
+      body: JSON.stringify(body)
     });
     if(res.ok){
       const data = await res.json().catch(()=>null);
@@ -881,7 +900,7 @@ function paintTally(mine){
     <div class="tallykey">
       ${segs.map(s=>`<span class="${s.p===mine?"me":""}"><i class="seg-${s.p}" style="background:${PATROL_HEX[s.p]}"></i>${PATROLS[s.p].name} <b>${Math.round(s.pct)}%</b></span>`).join("")}
     </div>
-    <p class="micro">${total.toLocaleString("en-GB")} ${total === 1 ? "patrol" : "patrols"} found so far. We keep the count, nothing else.</p>`;
+    <p class="micro">${total.toLocaleString("en-GB")} ${total === 1 ? "patrol" : "patrols"} found so far. We keep the answers people gave, so we can check the quiz is fair. Nothing that says who gave them.</p>`;
 }
 
 /* ============================================================
@@ -1541,7 +1560,8 @@ function renderQuestion(){
 }
 
 function renderResult(forced){
-  const id = forced || scoreResult();
+  const detail = forced ? null : scoreDetail();
+  const id = forced || detail.patrol;
   const pt = PATROLS[id];
   document.body.className = "result-mode result-" + id;
   app.innerHTML = `
@@ -1597,8 +1617,15 @@ function renderResult(forced){
   document.getElementById("shareBtn").addEventListener("click", (e)=>sharePatrol(id, e.currentTarget));
   applyFlags();
 
-  /* Count the outcome, then show how the camp is splitting. */
-  recordOutcome(id).then(loadTally).then(()=>paintTally(id));
+  /* Count the outcome, then show how the camp is splitting. A forced render
+     (the console, a screenshot pass) is not somebody's quiz, so it is not
+     counted and no run is recorded. */
+  if(detail){
+    recordOutcome(id, Object.assign({answers: answers.slice()}, detail))
+      .then(loadTally).then(()=>paintTally(id));
+  }else{
+    loadTally().then(()=>paintTally(id));
+  }
 }
 
 

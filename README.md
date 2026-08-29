@@ -54,7 +54,13 @@ switches, each taking effect on the next page load for everyone:
 - **Check cards before they go up** — off for a private event; on holds every upload
 
 The console also lists reported cards for review, shows the tally and sign-up
-count, exports the sign-ups as CSV, and can start clean on the spot: delete every photo, reset the counts, clear the sign-ups, or all three.
+count, exports the sign-ups and the quiz runs as CSV, and can start clean on the spot: delete every photo, reset the counts, clear the sign-ups, or all three.
+
+**Is the quiz balanced?** Every completed quiz records which patrol each of the
+seven answers pointed at, plus the four scores and any tie-break. The console
+draws that as bars, overall and per question, and marks a question *lopsided*
+when one patrol takes more than 40% or less than 12% of the answers. It holds
+nothing about the person answering, and the result screen says so.
 
 The app remembers the last state it saw, so a phone with no signal shows what
 it last knew, and everything defaults to on, so an unreachable API never
