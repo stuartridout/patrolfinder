@@ -6,8 +6,14 @@ this folder exists so the subsets can be rebuilt rather than guessed at.
 
 | Face | Used for | Subset |
 |---|---|---|
-| Bravely Script Regular | the today set's questions and titles | 27KB OTF → 6.8KB WOFF2 |
+| Bravely Script Regular | the today set's titles | 27KB OTF → 6.8KB WOFF2 |
+| Galano Grotesque Bold | the today set's questions | 48KB OTF → 13.0KB WOFF2 |
 | Galano Grotesque SemiBold | the today set's answer buttons | 46KB OTF → 12.6KB WOFF2 |
+
+Bravely started on the questions too and came off them: it sets its lowercase
+as small caps, which carries a short title and is hard work across a
+seventy-character question. Galano Bold reads easily and still steps clearly
+above the SemiBold answers.
 
 The 1907 set keeps the serif. The two looking different is half the point.
 

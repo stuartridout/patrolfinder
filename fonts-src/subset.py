@@ -11,6 +11,7 @@ uni = ",".join("U+%04X" % ord(c) for c in sorted(set(chars)))
 jobs = [
     ("fonts/BravelyScript-Regular.otf", "fonts/bravely.woff2"),
     ("fonts/galano/GalanoGrotesqueSemiBold.otf", "fonts/galano-semibold.woff2"),
+    ("fonts/galano/GalanoGrotesqueBold.otf", "fonts/galano-bold.woff2"),
 ]
 for src, out in jobs:
     subset([src, "--unicodes=" + uni, "--flavor=woff2", "--layout-features=*",
