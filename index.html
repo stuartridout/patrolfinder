@@ -819,22 +819,22 @@ const ERAS = {
         options:[
           {p:"ravens",  t:"Working out a quicker way to get the tent up"},
           {p:"bulls",   t:"Hauling kit and banging in pegs before anyone asks"},
-          {p:"curlews", t:"Checking the ground. Wind, level, where the puddles go"},
-          {p:"wolves",  t:"Assigning jobs to people. Every job gets a buddy"}
+          {p:"curlews", t:"Checking the site for hard ground and anywhere that might flood"},
+          {p:"wolves",  t:"Making sure every job gets assigned, and every job gets done"}
         ]},
       { weight:1,
         prompt:"7am. Your alarm goes and a leader starts banging a saucepan. You are...",
         options:[
           {p:"bulls",   t:"First out, calling the others on"},
-          {p:"curlews", t:"Already awake. You've been listening to camp get up"},
+          {p:"curlews", t:"Awake for hours, listening to the birdsong as everything wakes up"},
           {p:"wolves",  t:"Counting your patrol out of the tent"},
-          {p:"ravens",  t:"Rigging a quicker way to get the brews on"}
+          {p:"ravens",  t:"Kettle already on, hot drinks ready for everyone waking up"}
         ]},
       { weight:1,
         prompt:"Out on a hike with the map. What do you notice first?",
         options:[
           {p:"wolves",  t:"Where your whole patrol is. Always"},
-          {p:"ravens",  t:"A better line than the one on the map"},
+          {p:"ravens",  t:"A better route than the one on the map"},
           {p:"bulls",   t:"The quickest safe way through"},
           {p:"curlews", t:"The weather turning, before anyone says it"}
         ]},
@@ -849,19 +849,19 @@ const ERAS = {
       { weight:1,
         prompt:"A younger Scout's hoodie is soaked through. You...",
         options:[
-          {p:"wolves",  t:"Bring them over to your patrol"},
-          {p:"curlews", t:"Spotted it at breakfast, already sorted"},
-          {p:"ravens",  t:"Rig a drying line and show them how it's done"},
+          {p:"wolves",  t:"Bring them over to your campfire to warm up"},
+          {p:"curlews", t:"Spotted it at breakfast. Already drying by the fire"},
+          {p:"ravens",  t:"Rig a drying line and show them how to put one up themselves"},
           {p:"bulls",   t:"Hand over your spare hoodie"}
         ]},
       WATER_QUESTION,
       { weight:1,
         prompt:"Last night of camp. What will you do back home?",
         options:[
-          {p:"ravens",  t:"Improve it. You've already got ideas"},
-          {p:"wolves",  t:"Keep this patrol together. The group chat's already going"},
-          {p:"curlews", t:"Carry the story. Everyone's going to hear about this"},
-          {p:"bulls",   t:"Get your own patrol doing it"}
+          {p:"ravens",  t:"Share your ideas to make it better, and take one on yourself"},
+          {p:"wolves",  t:"Friends for life. Everyone's already in the group chat"},
+          {p:"curlews", t:"Share the story. You're already cutting a highlight reel for Insta"},
+          {p:"bulls",   t:"Start organising a camp like it for your own unit"}
         ]}
     ]
   }
@@ -2040,7 +2040,7 @@ function renderAlmost(){
   app.innerHTML = `
     <div class="screen almost">
       <p class="eyebrow">Seven answers in</p>
-      <h1 class="banner">Almost<br>there</h1>
+      <h1 class="banner">Almost there</h1>
       <p class="sub">We know which of the four 1907 patrols you belong to. One thing first, while you're here.</p>
 
       <div class="card">
