@@ -175,6 +175,27 @@
   /* A handful of cards fills the flood rather than huddling: bigger squares
      when one row is all there is. */
   .cards.few{--cell:min(19.5vw, 34vh)}
+
+  /* Past eight cards the spotlight becomes a strip: three rows filling
+     column by column, about 24 squares in view. A patrol with more than
+     fits holds the first screenful, then the strip slides sideways through
+     the rest - nobody's card is the one that never appears. */
+  .cardstrip{
+    flex:1;min-height:0;
+    display:flex;align-items:center;
+    overflow:hidden;
+  }
+  .cardstrip.fits{justify-content:center}
+  .strip{
+    --cell:min(7.2vw, 19vh);
+    display:grid;
+    grid-template-rows:repeat(3, var(--cell));
+    grid-auto-flow:column;
+    grid-auto-columns:var(--cell);
+    gap:1.1vw;
+    will-change:transform;
+  }
+  .strip .wallcard{width:var(--cell);height:var(--cell)}
   .wallcard{
     width:var(--cell);height:var(--cell);
     position:relative;border-radius:.6vw;overflow:hidden;
@@ -184,11 +205,6 @@
   .wallcard img{width:100%;height:100%;object-fit:cover;display:block}
   .wallcard.pop{animation:pop .6s cubic-bezier(.2,1.4,.4,1) both}
   @keyframes pop{from{transform:scale(.55) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
-
-  .morechip{
-    font-family:var(--sans);font-weight:800;font-size:1.15vw;
-    border:.16vw solid currentColor;border-radius:2vw;padding:.55vw 1.2vw;
-  }
 
   .spotempty{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -273,7 +289,10 @@ function onFlood(id){ return id === "curlews" ? NAVY : PAPER; }
 
 const ROTATE_MS = 12000;      /* one patrol on screen at a time */
 const POLL_MS   = 10000;      /* the wall and the tally, together */
-const GRID_MAX  = 8;          /* 4 x 2 squares fills the 16:9 spotlight */
+const SPOT_MAX  = 120;        /* sanity cap; the API caps the wall at 300 */
+const HOLD_MS   = 4000;       /* the first screenful holds before the strip slides */
+const END_HOLD_MS = 3000;     /* and the last screenful gets its beat too */
+const SCROLL_COLS_PER_S = 0.9;/* the slide moves about one column a second */
 
 const WSJ_MARK = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEwODAgMTA4MCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWw6c3BhY2U9InByZXNlcnZlIiB4bWxuczpzZXJpZj0iaHR0cDovL3d3dy5zZXJpZi5jb20vIiBzdHlsZT0iZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjI7Ij4KICAgIDxnIGlkPSJSR0Jfc2lnbmV0X2NvbG9yX1dTSjIwMjciIHRyYW5zZm9ybT0ibWF0cml4KDAuNTYyNSwwLDAsMSwwLDApIj4KICAgICAgICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBzdHlsZT0iZmlsbDpub25lOyIvPgogICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuOTg0NjE1LC03LjIxMDY4ZS0zMiw3Ljg4ODZlLTMxLDAuNTUzODQ2LC00NDYxNy43LC02ODQwKSI+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik00NjI4OS45LDEyNjc1QzQ2NjQ4LjYsMTI2NzUgNDY5MzkuOSwxMjk2Ni4zIDQ2OTM5LjksMTMzMjVDNDY5MzkuOSwxMzY4My44IDQ2NjQ4LjYsMTM5NzUgNDYyODkuOSwxMzk3NUM0NTkzMS4xLDEzOTc1IDQ1NjM5LjksMTM2ODMuOCA0NTYzOS45LDEzMzI1QzQ1NjM5LjksMTI5NjYuMyA0NTkzMS4xLDEyNjc1IDQ2Mjg5LjksMTI2NzVaTTQ1OTM4LDEzNzQ3LjZDNDYwMzMuNCwxMzgyNy4xIDQ2MTU2LjEsMTM4NzUgNDYyODkuOSwxMzg3NUM0NjU5My40LDEzODc1IDQ2ODM5LjksMTM2MjguNiA0NjgzOS45LDEzMzI1QzQ2ODM5LjksMTMwMjEuNSA0NjU5My40LDEyNzc1IDQ2Mjg5LjksMTI3NzVDNDU5ODYuMywxMjc3NSA0NTczOS45LDEzMDIxLjUgNDU3MzkuOSwxMzMyNUM0NTczOS45LDEzNDU4LjggNDU3ODcuOCwxMzU4MS41IDQ1ODY3LjMsMTM2NzYuOUw0NTkxOS44LDEzNjI0LjNMNDU5MTkuOCwxMzI5NS4xTDQ2MDE5LjgsMTMyOTUuMUw0NjAyMC4yLDEzNTI0TDQ2MDg5LjksMTM0NTQuM0w0NjA4OS45LDEzMTI1TDQ2MTg5LjksMTMxMjVMNDYxOTAuMiwxMzM1NEw0NjQ2OC45LDEzMDc1LjNMNDYyMzkuOSwxMzA3NUw0NjIzOS45LDEyOTc1TDQ2NjM5LjksMTI5NzVMNDY2MzkuOSwxMzM3NUw0NjUzOS45LDEzMzc1TDQ2NTM5LjYsMTMxNDZMNDY1MzAuNiwxMzE1NUw0NjUzMC43LDEzMTU1TDQ2MjYwLjksMTM0MjQuN0w0NjQ4OS45LDEzNDI1TDQ2NDg5LjksMTM1MjVMNDYxNjAuNiwxMzUyNUw0NjA5MC45LDEzNTk0LjhMNDYzMTkuOCwxMzU5NS4xTDQ2MzE5LjgsMTM2OTUuMUw0NTk5MC42LDEzNjk1LjFMNDU5MzgsMTM3NDcuNloiIHN0eWxlPSJmaWxsOnJnYigyMDMsNDQsNDApOyIvPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==";
 
@@ -320,6 +339,10 @@ let latestArrival = null;    /* {patrol, at} for the ticker */
 const showNext = [];         /* patrols owed a turn because a card just landed */
 let spotIdx = 0;
 let lastOkAt = null;
+let spotKey = "";            /* what the spotlight currently shows, so a poll that
+                                changes nothing does not restart the hold or the slide */
+let rotTimer = null;
+let slideTimer = null;
 
 async function fetchJson(path){
   const res = await fetch(apiUrl(path), {headers:{"Accept":"application/json"}, cache:"no-store"});
@@ -358,7 +381,8 @@ async function poll(){
   }catch(_){ /* a failed refresh keeps the cards that are already up */ }
   if(ok) lastOkAt = new Date();
   paintRail();
-  paintSpot(false);
+  if(computeSpotKey() !== spotKey) paintSpot(false);
+  else updateSpotNumbers();
 }
 
 /* ------------------------------------------------------------
@@ -415,7 +439,7 @@ function paintRail(){
 /* ------------------------------------------------------------
    The spotlight: one patrol's flood, its count, its newest cards.
    ------------------------------------------------------------ */
-function paintSpot(rotate){
+function paintSpot(entrance){
   const spot = document.getElementById("spot");
   const id = PATROL_IDS[spotIdx];
   const ink = onFlood(id);
@@ -424,8 +448,7 @@ function paintSpot(rotate){
   spot.style.color = ink;
 
   const mine = photos ? photos.filter(i => i.patrol === id) : [];
-  const shown = mine.slice(0, GRID_MAX);
-  const more = mine.length - shown.length;
+  const shown = mine.slice(0, SPOT_MAX);
 
   let body;
   if(wallOff){
@@ -443,14 +466,22 @@ function paintSpot(rotate){
       <p class="big">Nothing on the wall for the ${esc(pt.name)} yet. Be the first.</p>
       <p class="small">Take the quiz at wsjpatrol.com and share your patrol card.</p>
     </div>`;
-  }else{
+  }else if(shown.length <= 8){
     body = `<div class="cards${shown.length <= 4 ? " few" : ""}">
       ${shown.map(i => `
         <figure class="wallcard${popIds.has(i.id) ? " pop" : ""}">
           <img src="${esc(i.url)}" alt="A ${esc(pt.name)} card from the wall">
         </figure>`).join("")}
-      ${more > 0 ? `<p class="morechip">+${more} more on the wall</p>` : ""}
     </div>`;
+  }else{
+    /* Three rows, newest first, filling column by column. What overflows the
+       screen is what the slide will bring in. */
+    body = `<div class="cardstrip"><div class="strip">
+      ${shown.map(i => `
+        <figure class="wallcard${popIds.has(i.id) ? " pop" : ""}">
+          <img src="${esc(i.url)}" alt="A ${esc(pt.name)} card from the wall">
+        </figure>`).join("")}
+    </div></div>`;
   }
 
   const n = tally ? (Number(tally[id]) || 0) : null;
@@ -480,13 +511,59 @@ function paintSpot(rotate){
   });
 
   for(const i of shown) popIds.delete(i.id);
-  if(rotate){
+  spotKey = computeSpotKey();
+  if(entrance){
     /* Restart the entrance so each patrol arrives, rather than snapping. */
     spot.style.animation = "none";
     void spot.offsetWidth;
     spot.style.animation = "";
   }
   paintRailHighlight();
+  armSpot();
+}
+
+/* What the spotlight would show right now. A poll that leaves this unchanged
+   must not repaint: rebuilding the grid restarts the hold and the slide. */
+function computeSpotKey(){
+  const id = PATROL_IDS[spotIdx];
+  if(wallOff) return id + "|off";
+  if(photos === null) return id + "|wait";
+  const mine = photos.filter(i => i.patrol === id).slice(0, SPOT_MAX);
+  return id + "|" + (tally ? "t" : "-") + "|" + mine.map(i => i.id).join(",");
+}
+
+/* The numbers can move without the cards changing; touch only the text. */
+function updateSpotNumbers(){
+  const id = PATROL_IDS[spotIdx];
+  const nEl = document.querySelector(".spotcount .n");
+  if(nEl && tally) nEl.textContent = (Number(tally[id]) || 0).toLocaleString("en-GB");
+}
+
+/* Sizes the dwell to what is on screen and starts the slide when the strip
+   overflows: hold the first screenful, slide at about a column a second to
+   the last card, hold that, then move on. Fitting content keeps the 12s. */
+function armSpot(){
+  clearTimeout(rotTimer);
+  clearTimeout(slideTimer);
+  let dwell = ROTATE_MS;
+  const wrap = document.querySelector(".cardstrip");
+  const strip = wrap ? wrap.querySelector(".strip") : null;
+  if(strip){
+    const overflow = strip.scrollWidth - wrap.clientWidth;
+    if(overflow > 4){
+      const col = strip.firstElementChild ? strip.firstElementChild.offsetWidth : 0;
+      const gap = parseFloat(getComputedStyle(strip).columnGap) || 0;
+      const slideMs = Math.max(1000, overflow / (Math.max(1, col + gap) * SCROLL_COLS_PER_S) * 1000);
+      slideTimer = setTimeout(() => {
+        strip.style.transition = `transform ${Math.round(slideMs)}ms linear`;
+        strip.style.transform = `translateX(${-overflow}px)`;
+      }, HOLD_MS);
+      dwell = Math.max(ROTATE_MS, HOLD_MS + slideMs + END_HOLD_MS);
+    }else{
+      wrap.classList.add("fits");
+    }
+  }
+  rotTimer = setTimeout(rotate, dwell);
 }
 
 /* Only the "ON SCREEN" tag moves between rotations; repainting the whole rail
@@ -542,10 +619,9 @@ document.getElementById("wsjMark").src = WSJ_MARK;
 document.getElementById("postmark").innerHTML = POSTMARK;
 document.getElementById("purgeDate").textContent = purgeDateText();
 paintRail();
-paintSpot(false);
+paintSpot(false);          /* also arms the rotation; each repaint re-arms it */
 poll();
 setInterval(poll, POLL_MS);
-setInterval(rotate, ROTATE_MS);
 </script>
 </body>
 </html>
