@@ -125,6 +125,15 @@
   .ticker .twait{font-family:var(--sans);font-size:.92vw;font-weight:600;color:rgba(27,53,121,.75)}
 
   .railfoot{border-top:2px solid var(--rule);padding:1.1vw 1.6vw 1.3vw}
+  /* The QR is the invitation made tappable-from-a-phone: dark modules on a
+     white plate, big enough to scan from a step or two back. */
+  .qrrow{display:flex;align-items:center;gap:1.1vw;margin-bottom:.4vw}
+  .qr{
+    flex:none;width:9.5vw;height:9.5vw;
+    background:#fff;border:1px solid var(--sky-line);border-radius:.5vw;
+    padding:.5vw;
+  }
+  .qr svg{width:100%;height:100%;display:block}
   .cta{font-family:var(--sans);font-size:1.25vw;font-weight:800}
   .ctasub{font-family:var(--sans);font-size:.9vw;font-weight:600;margin-top:.15vw}
   .smallprint{
@@ -195,6 +204,13 @@
     gap:1.1vw;
     will-change:transform;
   }
+  /* Nine cards are not a wall yet: up to twelve they get two rows at nearly
+     double the area, and the dense three-row strip waits for thirteen. Without
+     this step, nine cards fell off a cliff from the eight-card layout. */
+  .strip.rows2{
+    --cell:min(11.5vw, 28vh);
+    grid-template-rows:repeat(2, var(--cell));
+  }
   .strip .wallcard{width:var(--cell);height:var(--cell)}
   .wallcard{
     width:var(--cell);height:var(--cell);
@@ -252,8 +268,13 @@
         <div class="ticker" id="ticker"></div>
       </div>
       <div class="railfoot">
-        <p class="cta">Find your patrol at wsjpatrol.com</p>
-        <p class="ctasub">Seven questions, about 90 seconds.</p>
+        <div class="qrrow">
+          <div class="qr"><svg viewBox="-2 -2 33 33" role="img" aria-label="QR code for wsjpatrol.com" shape-rendering="crispEdges"><path d="M0 0h7v1h-7zM9 0h3v1h-3zM13 0h2v1h-2zM16 0h2v1h-2zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h5v1h-5zM15 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h2v1h-2zM12 2h1v1h-1zM14 2h3v1h-3zM19 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h3v1h-3zM13 3h5v1h-5zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h1v1h-1zM12 4h1v1h-1zM14 4h2v1h-2zM18 4h2v1h-2zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h3v1h-3zM16 5h5v1h-5zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM9 7h2v1h-2zM13 7h1v1h-1zM15 7h1v1h-1zM19 7h2v1h-2zM1 8h3v1h-3zM5 8h2v1h-2zM10 8h1v1h-1zM13 8h1v1h-1zM15 8h2v1h-2zM18 8h2v1h-2zM26 8h2v1h-2zM4 9h1v1h-1zM9 9h1v1h-1zM11 9h1v1h-1zM15 9h1v1h-1zM18 9h1v1h-1zM20 9h2v1h-2zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM0 10h2v1h-2zM4 10h1v1h-1zM6 10h3v1h-3zM10 10h1v1h-1zM13 10h2v1h-2zM17 10h1v1h-1zM19 10h2v1h-2zM22 10h3v1h-3zM27 10h1v1h-1zM1 11h1v1h-1zM3 11h1v1h-1zM7 11h5v1h-5zM13 11h3v1h-3zM20 11h1v1h-1zM23 11h2v1h-2zM28 11h1v1h-1zM3 12h4v1h-4zM10 12h1v1h-1zM12 12h6v1h-6zM19 12h3v1h-3zM23 12h1v1h-1zM26 12h3v1h-3zM0 13h2v1h-2zM3 13h1v1h-1zM9 13h1v1h-1zM11 13h2v1h-2zM14 13h1v1h-1zM17 13h1v1h-1zM19 13h1v1h-1zM22 13h2v1h-2zM25 13h2v1h-2zM28 13h1v1h-1zM1 14h1v1h-1zM5 14h2v1h-2zM12 14h1v1h-1zM15 14h2v1h-2zM19 14h2v1h-2zM22 14h4v1h-4zM28 14h1v1h-1zM0 15h3v1h-3zM5 15h1v1h-1zM7 15h1v1h-1zM9 15h1v1h-1zM11 15h1v1h-1zM14 15h2v1h-2zM19 15h2v1h-2zM24 15h2v1h-2zM27 15h1v1h-1zM0 16h1v1h-1zM4 16h3v1h-3zM8 16h3v1h-3zM12 16h1v1h-1zM17 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM27 16h2v1h-2zM3 17h3v1h-3zM7 17h3v1h-3zM12 17h2v1h-2zM18 17h2v1h-2zM21 17h2v1h-2zM25 17h1v1h-1zM0 18h1v1h-1zM2 18h1v1h-1zM4 18h5v1h-5zM10 18h2v1h-2zM14 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM22 18h5v1h-5zM3 19h1v1h-1zM7 19h3v1h-3zM11 19h8v1h-8zM20 19h3v1h-3zM24 19h4v1h-4zM1 20h3v1h-3zM6 20h2v1h-2zM9 20h1v1h-1zM11 20h18v1h-18zM8 21h1v1h-1zM10 21h1v1h-1zM12 21h1v1h-1zM16 21h2v1h-2zM19 21h2v1h-2zM24 21h2v1h-2zM27 21h2v1h-2zM0 22h7v1h-7zM10 22h3v1h-3zM18 22h3v1h-3zM22 22h1v1h-1zM24 22h1v1h-1zM26 22h2v1h-2zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM10 23h1v1h-1zM12 23h2v1h-2zM15 23h3v1h-3zM20 23h1v1h-1zM24 23h1v1h-1zM27 23h1v1h-1zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM9 24h2v1h-2zM12 24h2v1h-2zM15 24h2v1h-2zM20 24h7v1h-7zM28 24h1v1h-1zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h1v1h-1zM10 25h2v1h-2zM14 25h1v1h-1zM17 25h1v1h-1zM19 25h1v1h-1zM24 25h2v1h-2zM27 25h1v1h-1zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h4v1h-4zM13 26h2v1h-2zM18 26h1v1h-1zM20 26h1v1h-1zM23 26h1v1h-1zM26 26h1v1h-1zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM8 27h1v1h-1zM10 27h1v1h-1zM14 27h2v1h-2zM18 27h1v1h-1zM22 27h1v1h-1zM24 27h2v1h-2zM27 27h1v1h-1zM0 28h7v1h-7zM11 28h2v1h-2zM14 28h1v1h-1zM16 28h1v1h-1zM18 28h2v1h-2zM22 28h2v1h-2zM27 28h1v1h-1z" fill="#1B3579"/></svg></div>
+          <div>
+            <p class="cta">Scan to find your patrol</p>
+            <p class="ctasub">wsjpatrol.com &middot; seven questions, about 90 seconds</p>
+          </div>
+        </div>
         <p class="smallprint">Cards people chose to share. Everything on the wall comes down on <span id="purgeDate"></span>.</p>
         <p class="stamp" id="updStamp"></p>
       </div>
@@ -474,9 +495,10 @@ function paintSpot(entrance){
         </figure>`).join("")}
     </div>`;
   }else{
-    /* Three rows, newest first, filling column by column. What overflows the
-       screen is what the slide will bring in. */
-    body = `<div class="cardstrip"><div class="strip">
+    /* Newest first, filling column by column: two generous rows up to twelve
+       cards, three dense rows past that. What overflows the screen is what
+       the slide will bring in. */
+    body = `<div class="cardstrip"><div class="strip${shown.length <= 12 ? " rows2" : ""}">
       ${shown.map(i => `
         <figure class="wallcard${popIds.has(i.id) ? " pop" : ""}">
           <img src="${esc(i.url)}" alt="A ${esc(pt.name)} card from the wall">
