@@ -8,9 +8,10 @@ name: Publish to GitHub Pages
 #
 # The site is index.html plus the PWA files it needs at real URLs: a service
 # worker cannot be registered from a data: URI, so sw.js, the manifest and the
-# icons are published alongside it. CNAME goes with them, or GitHub Pages
-# drops the wsjpatrol.com custom domain on the next publish. Everything else
-# in the repo stays private to main.
+# icons are published alongside it. viewer.html is the live wall display for
+# the screen on the stand. CNAME goes with them, or GitHub Pages drops the
+# wsjpatrol.com custom domain on the next publish. Everything else in the
+# repo stays private to main.
 
 on:
   push:
@@ -42,6 +43,6 @@ jobs:
           # carries the repo's working files or its history.
           git checkout --orphan gh-pages-build
           git rm -rq --cached .
-          git add -f .nojekyll CNAME index.html manifest.webmanifest sw.js icons
+          git add -f .nojekyll CNAME index.html viewer.html manifest.webmanifest sw.js icons
           git commit -qm "Publish site from $GITHUB_SHA"
           git push --force origin gh-pages-build:refs/heads/gh-pages

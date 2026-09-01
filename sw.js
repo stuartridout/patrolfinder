@@ -3,7 +3,7 @@
 
    Bump CACHE whenever index.html changes, or returning visitors keep the old copy
    until the network check succeeds. The Publish workflow does not do this for you. */
-const CACHE = 'patrolfinder-v26';
+const CACHE = 'patrolfinder-v27';
 
 /* Relative so this works at /patrolfinder/ on Pages and at / on any other host. */
 const SHELL = [
@@ -47,15 +47,23 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;   /* the tally/log API lives elsewhere */
 
-  /* Navigations: fresh copy when there is signal, cached shell when there is not. */
+  /* Navigations: fresh copy when there is signal, cached shell when there is not.
+     Only the app itself refreshes the cached shell — viewer.html is a navigation
+     too, and caching it as './index.html' would hand offline visitors the wall
+     display instead of the quiz. The viewer is live data; offline it has nothing
+     honest to show, so it gets no fallback. */
   if (req.mode === 'navigate') {
+    const isShell = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
     e.respondWith((async () => {
       try {
         const fresh = await fetch(req);
-        const cache = await caches.open(CACHE);
-        cache.put('./index.html', fresh.clone());
+        if (isShell) {
+          const cache = await caches.open(CACHE);
+          cache.put('./index.html', fresh.clone());
+        }
         return fresh;
       } catch (_) {
+        if (!isShell) return Response.error();
         const cache = await caches.open(CACHE);
         return (await cache.match('./index.html')) || (await cache.match('./')) || Response.error();
       }
