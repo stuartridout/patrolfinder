@@ -179,7 +179,8 @@
     display:flex;flex-wrap:wrap;
     justify-content:center;align-content:center;align-items:center;
     gap:1.1vw;
-    --cell:min(16vw, 27.5vh);
+    /* Same cell as the strip, so eight cards never render smaller than nine. */
+    --cell:min(16.5vw, 31vh);
   }
   /* A handful of cards fills the flood rather than huddling: bigger squares
      when one row is all there is. */
@@ -195,21 +196,22 @@
     overflow:hidden;
   }
   .cardstrip.fits{justify-content:center}
+  /* Two rows, always: the cards stay big and the sideways slide does the work
+     of quantity. The cell is sized so four columns fill the flood at 16:9 -
+     eight in view, the ninth peeking in at the edge. */
   .strip{
-    --cell:min(7.2vw, 19vh);
+    --cell:min(16.5vw, 31vh);
     display:grid;
-    grid-template-rows:repeat(3, var(--cell));
+    grid-template-rows:repeat(2, var(--cell));
     grid-auto-flow:column;
     grid-auto-columns:var(--cell);
     gap:1.1vw;
     will-change:transform;
   }
-  /* Nine cards are not a wall yet: up to twelve they get two rows at nearly
-     double the area, and the dense three-row strip waits for thirteen. Without
-     this step, nine cards fell off a cliff from the eight-card layout. */
-  .strip.rows2{
-    --cell:min(11.5vw, 28vh);
-    grid-template-rows:repeat(2, var(--cell));
+  /* On anything squarer than a TV the height cap would leave four columns of
+     shrunken cards, so drop to three bigger ones instead. */
+  @media (max-aspect-ratio: 13/9){
+    .strip{--cell:min(21.5vw, 31vh)}
   }
   .strip .wallcard{width:var(--cell);height:var(--cell)}
   .wallcard{
@@ -495,10 +497,9 @@ function paintSpot(entrance){
         </figure>`).join("")}
     </div>`;
   }else{
-    /* Newest first, filling column by column: two generous rows up to twelve
-       cards, three dense rows past that. What overflows the screen is what
-       the slide will bring in. */
-    body = `<div class="cardstrip"><div class="strip${shown.length <= 12 ? " rows2" : ""}">
+    /* Newest first, two rows, filling column by column. What overflows the
+       screen is what the slide will bring in. */
+    body = `<div class="cardstrip"><div class="strip">
       ${shown.map(i => `
         <figure class="wallcard${popIds.has(i.id) ? " pop" : ""}">
           <img src="${esc(i.url)}" alt="A ${esc(pt.name)} card from the wall">
