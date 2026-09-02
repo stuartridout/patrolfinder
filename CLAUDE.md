@@ -2,7 +2,7 @@
 
 Quiz SPA sorting people into the four 1907 Brownsea patrols (Wolves, Bulls, Curlews, Ravens). Promotes the UK Pavilion at Gilwell Reunion ahead of the 26th World Scout Jamboree, Poland 2027. Lives at wsjpatrol.com.
 
-The app is still one file: `index.html`, no build step, official logos embedded as data URIs, all screens JS-rendered into `#app`. It is no longer the only file. A PWA needs real URLs, so `manifest.webmanifest`, `sw.js`, `icons/` and `CNAME` ship alongside it, `viewer.html` is the live wall display for the screen on the stand, and `backend/` holds the Azure Function App. The Publish workflow ships exactly that set and nothing else.
+The app is still one file: `index.html`, no build step, official logos embedded as data URIs, all screens JS-rendered into `#app`. It is no longer the only file. A PWA needs real URLs, so `manifest.webmanifest`, `sw.js`, `icons/` and `CNAME` ship alongside it, `viewer.html` is the live wall display for the screen on the stand, and `backend/` holds the Azure Function App. The Publish workflow ships exactly that set and nothing else. `posters/` holds the four A4 teaser posters (PDF) and the script that renders them from `index.html`'s own fonts, heads and lockup - decode-verifying every QR - so it stays private to main and cannot drift from the app.
 
 Rules that matter:
 - Patrol colours and 1907 rosters are historical and verified. Do not change them. Keep "probably" on Simon Rodney and keep the honesty footer.
