@@ -32,6 +32,13 @@
     --curlews:#F5B01E;
     --ravens:#C02D24;
     --rule:rgba(27,53,121,.14);
+    /* The rail's unit. The rail is a fixed stack designed against a 16:9
+       screen; in plain vw, any window wider than that - a laptop browser,
+       where the chrome has eaten the height - runs the stack off the bottom
+       and puts the tally rows through the QR. So: 1vw, capped at what 1vw is
+       worth on a 16:9 screen of this height. TVs are untouched (at 16:9 the
+       two sides are equal); wider windows get the same rail, scaled down. */
+    --ru:min(1vw, 1.7778vh);
     --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     --grot:"Galano Grotesque",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -52,97 +59,99 @@
   .stage{display:flex;width:100vw;height:100vh}
 
   /* ============ the rail: masthead, live count, ticker ============ */
+  /* Everything in the rail is sized in --ru, never vw: vw here is what put
+     the tally rows through the QR on any window wider than 16:9. */
   .rail{
-    width:26vw;min-width:26vw;
+    width:calc(26*var(--ru));min-width:calc(26*var(--ru));
     background:var(--paper);
     display:flex;flex-direction:column;
-    border-right:.35vw solid var(--navy);
+    border-right:calc(.35*var(--ru)) solid var(--navy);
   }
   /* Official lockup on a clean white bar, same as the app's masthead. */
   .masthead{
     background:#fff;
     border-bottom:1px solid var(--sky-line);
-    padding:1vw 1.6vw;
-    display:flex;align-items:center;justify-content:space-between;gap:1vw;
+    padding:var(--ru) calc(1.6*var(--ru));
+    display:flex;align-items:center;justify-content:space-between;gap:var(--ru);
   }
-  .masthead img{height:4.2vw;display:block}
-  .masthead .postmark{width:4.6vw;height:4.6vw;color:var(--navy)}
+  .masthead img{height:calc(4.2*var(--ru));display:block}
+  .masthead .postmark{width:calc(4.6*var(--ru));height:calc(4.6*var(--ru));color:var(--navy)}
   .masthead .postmark svg{width:100%;height:100%;display:block}
 
-  .railbody{flex:1;display:flex;flex-direction:column;padding:1.6vw;min-height:0}
+  .railbody{flex:1;display:flex;flex-direction:column;padding:calc(1.6*var(--ru));min-height:0}
 
   .eyebrow{
-    font-family:var(--sans);font-size:.85vw;font-weight:800;
+    font-family:var(--sans);font-size:calc(.85*var(--ru));font-weight:800;
     letter-spacing:.16em;text-transform:uppercase;color:var(--navy);
   }
   .live{color:#B0271E}
   .livedot{
-    display:inline-block;width:.62vw;height:.62vw;border-radius:50%;
-    background:#B0271E;margin-right:.35vw;vertical-align:baseline;
+    display:inline-block;width:calc(.62*var(--ru));height:calc(.62*var(--ru));border-radius:50%;
+    background:#B0271E;margin-right:calc(.35*var(--ru));vertical-align:baseline;
     animation:pulse 1.6s ease-in-out infinite;
   }
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
   .railtitle{
     font-family:"Bravely",var(--serif);font-weight:400;
-    font-size:2.5vw;line-height:1.02;margin-top:.5vw;
+    font-size:calc(2.5*var(--ru));line-height:1.02;margin-top:calc(.5*var(--ru));
   }
 
-  .totalblock{margin-top:1.7vw}
-  .total{font-family:var(--grot);font-weight:700;font-size:4.6vw;line-height:1}
-  .totallabel{font-family:var(--sans);font-size:1vw;font-weight:600;margin-top:.2vw}
+  .totalblock{margin-top:calc(1.7*var(--ru))}
+  .total{font-family:var(--grot);font-weight:700;font-size:calc(4.6*var(--ru));line-height:1}
+  .totallabel{font-family:var(--sans);font-size:var(--ru);font-weight:600;margin-top:calc(.2*var(--ru))}
 
-  .rows{margin-top:1.5vw;display:flex;flex-direction:column;gap:1.05vw}
-  .prow{display:grid;grid-template-columns:2.7vw 1fr auto;column-gap:.8vw;align-items:center}
-  .prow .head{width:2.7vw;height:2.5vw}
-  .prow .pname{font-family:var(--serif);font-weight:700;font-size:1.5vw}
-  .prow .pcount{font-family:var(--grot);font-weight:700;font-size:1.7vw;font-variant-numeric:tabular-nums}
+  .rows{margin-top:calc(1.5*var(--ru));display:flex;flex-direction:column;gap:calc(1.05*var(--ru))}
+  .prow{display:grid;grid-template-columns:calc(2.7*var(--ru)) 1fr auto;column-gap:calc(.8*var(--ru));align-items:center}
+  .prow .head{width:calc(2.7*var(--ru));height:calc(2.5*var(--ru))}
+  .prow .pname{font-family:var(--serif);font-weight:700;font-size:calc(1.5*var(--ru))}
+  .prow .pcount{font-family:var(--grot);font-weight:700;font-size:calc(1.7*var(--ru));font-variant-numeric:tabular-nums}
   .prow .bar{
-    grid-column:1 / -1;height:.62vw;border-radius:.31vw;
+    grid-column:1 / -1;height:calc(.62*var(--ru));border-radius:calc(.31*var(--ru));
     background:rgba(27,53,121,.10);overflow:hidden;
   }
-  .prow .bar i{display:block;height:100%;border-radius:.31vw;transition:width .8s ease}
+  .prow .bar i{display:block;height:100%;border-radius:calc(.31*var(--ru));transition:width .8s ease}
   /* The spotlighted patrol's row is marked with its own colour, not by dimming
      the others: dimmed rows read as switched off. */
   .prow.now .pname::after{
-    content:"ON SCREEN";font-family:var(--sans);font-weight:800;font-size:.62vw;
-    letter-spacing:.12em;margin-left:.55vw;vertical-align:.22em;
-    color:var(--navy);border:1px solid var(--rule);border-radius:.6vw;padding:.1vw .4vw;
+    content:"ON SCREEN";font-family:var(--sans);font-weight:800;font-size:calc(.62*var(--ru));
+    letter-spacing:.12em;margin-left:calc(.55*var(--ru));vertical-align:.22em;
+    color:var(--navy);border:1px solid var(--rule);border-radius:calc(.6*var(--ru));padding:calc(.1*var(--ru)) calc(.4*var(--ru));
   }
-  .waiting{font-family:var(--sans);font-size:1.05vw;font-weight:600;line-height:1.5;margin-top:1.6vw}
+  .waiting{font-family:var(--sans);font-size:calc(1.05*var(--ru));font-weight:600;line-height:1.5;margin-top:calc(1.6*var(--ru))}
 
   .ticker{
     margin-top:auto;
     border-top:2px solid var(--rule);
-    padding-top:1vw;min-height:3.4vw;
+    padding-top:var(--ru);min-height:calc(3.4*var(--ru));
   }
-  .ticker .tnew{display:flex;align-items:center;gap:.7vw;animation:slidein .45s ease both}
-  .ticker .dot{width:1vw;height:1vw;border-radius:50%;flex:none}
-  .ticker .twords{font-family:var(--sans);font-size:1.02vw;font-weight:600;line-height:1.35}
+  .ticker .tnew{display:flex;align-items:center;gap:calc(.7*var(--ru));animation:slidein .45s ease both}
+  .ticker .dot{width:var(--ru);height:var(--ru);border-radius:50%;flex:none}
+  .ticker .twords{font-family:var(--sans);font-size:calc(1.02*var(--ru));font-weight:600;line-height:1.35}
   .ticker .twords b{font-weight:800}
-  .ticker .ttime{font-family:var(--sans);font-size:.8vw;font-weight:600;color:rgba(27,53,121,.75)}
+  .ticker .ttime{font-family:var(--sans);font-size:calc(.8*var(--ru));font-weight:600;color:rgba(27,53,121,.75)}
   @keyframes slidein{from{transform:translateY(60%);opacity:0}to{transform:none;opacity:1}}
-  .ticker .twait{font-family:var(--sans);font-size:.92vw;font-weight:600;color:rgba(27,53,121,.75)}
+  .ticker .twait{font-family:var(--sans);font-size:calc(.92*var(--ru));font-weight:600;color:rgba(27,53,121,.75)}
 
-  .railfoot{border-top:2px solid var(--rule);padding:1.1vw 1.6vw 1.3vw}
+  .railfoot{border-top:2px solid var(--rule);padding:calc(1.1*var(--ru)) calc(1.6*var(--ru)) calc(1.3*var(--ru))}
   /* The QR is the invitation made tappable-from-a-phone: dark modules on a
      white plate, big enough to scan from a step or two back. */
-  .qrrow{display:flex;align-items:center;gap:1.1vw;margin-bottom:.4vw}
+  .qrrow{display:flex;align-items:center;gap:calc(1.1*var(--ru));margin-bottom:calc(.4*var(--ru))}
   .qr{
-    flex:none;width:9.5vw;height:9.5vw;
-    background:#fff;border:1px solid var(--sky-line);border-radius:.5vw;
-    padding:.5vw;
+    flex:none;width:calc(9.5*var(--ru));height:calc(9.5*var(--ru));
+    background:#fff;border:1px solid var(--sky-line);border-radius:calc(.5*var(--ru));
+    padding:calc(.5*var(--ru));
   }
   .qr svg{width:100%;height:100%;display:block}
-  .cta{font-family:var(--sans);font-size:1.25vw;font-weight:800}
-  .ctasub{font-family:var(--sans);font-size:.9vw;font-weight:600;margin-top:.15vw}
+  .cta{font-family:var(--sans);font-size:calc(1.25*var(--ru));font-weight:800}
+  .ctasub{font-family:var(--sans);font-size:calc(.9*var(--ru));font-weight:600;margin-top:calc(.15*var(--ru))}
   .smallprint{
-    font-family:var(--sans);font-size:.78vw;font-weight:600;
-    color:rgba(27,53,121,.75);margin-top:.7vw;line-height:1.45;
+    font-family:var(--sans);font-size:calc(.78*var(--ru));font-weight:600;
+    color:rgba(27,53,121,.75);margin-top:calc(.7*var(--ru));line-height:1.45;
   }
   .stamp{
-    font-family:var(--sans);font-size:.78vw;font-weight:600;
-    color:rgba(27,53,121,.75);margin-top:.35vw;
+    font-family:var(--sans);font-size:calc(.78*var(--ru));font-weight:600;
+    color:rgba(27,53,121,.75);margin-top:calc(.35*var(--ru));
   }
 
   /* ============ the spotlight: one patrol at a time ============ */
@@ -292,7 +301,9 @@
    Read-only: it polls the same public API as the app and draws
    what comes back. Open wsjpatrol.com/viewer.html and press
    Full screen. Designed for a 16:9 TV; everything is sized in
-   viewport units so 1080p and 4K get the same picture.
+   viewport units so 1080p and 4K get the same picture. Windows
+   wider than 16:9 (a laptop browser, chrome eating the height)
+   get the same rail scaled to the height instead - see --ru.
    ============================================================ */
 const API_BASE = "https://wsjpatrol-fn.azurewebsites.net";
 const REUNION_ENDS = "2026-09-06";   /* must match index.html and the Function App */
