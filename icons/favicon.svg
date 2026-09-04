@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Baden-Powell in his Scout hat">
+  <title>WSJ 2027 UK</title>
+  <!-- Baden-Powell in his campaign hat. Traced from the silhouette Stuart
+       supplied for this project, cropped to the head and shoulder and bled
+       off the bottom edge. Not original artwork and not drawn from scratch:
+       drawing it from scratch was tried, and at icon size a hand-drawn head
+       in a wide-brimmed hat turns into a plague doctor's mask.
+
+       This path is the mark. The eight PNGs in this folder are renders of it
+       at two framings, both running the shoulder off the foot of the frame:
+       width 0.86 of the box with its top at 0.1 for everything, and
+       width 0.72 at 0.165 for the maskable icon, which is pulled in so the
+       head clears its circular safe zone. Never hand-edit the PNGs. -->
+  <defs><clipPath id="frame"><rect width="512" height="512" rx="112"/></clipPath></defs>
+  <g clip-path="url(#frame)">
+    <rect width="512" height="512" fill="#1B3579"/>
+    <path fill="#FAF5E9" d="M245 51.2L257.1 52.5L273.3 57.5L338.1 86.3L345.7 93.9L355.2 107.9L362.4 123.6L367.8 147L372.7 155.5L389.8 156L459.5 144.8L472.6 144.8L476.2 147.9L471.2 152.8L460 157.3L394.8 174L381.7 178.9L376.8 183.4L375.4 187.5L376.3 220.3L381.3 233.4L395.7 253.6L401 266.6L400.1 274.7L389.8 285.1L385.3 293.6L382.6 332.8L378.1 352.5L372.7 360.2L362.4 364.7L312.4 371.4L303.9 399.8L304.3 406.1L308.4 412.8L337.6 443.8L378.1 491.5L382.2 499.6L383.1 512.2L387.6 524.8L403.6 561.9L352.9 561.9L346.6 523.5L339.4 501L330 493.3L298.5 479.8L254.4 468.6L226.5 465.9L202.3 468.1L173.5 475.3L135.7 490.6L107.4 506.4L68.7 535.1L62.8 538.3L57.9 537.8L75 510L111.9 420.5L120.4 405.6L137.5 382.7L149.2 362L157.7 340.4L160.4 323.3L165.4 318.4L174.8 313.4L176.2 305.3L169.4 289.6L149.2 255.4L145.1 231.6L141.5 228.4L52.9 243.2L37.2 243.7L35.8 240.1L39 237L53.4 231.1L138.8 210.4L140.2 205.9L128.9 165.4L129.8 152.4L136.1 138.9L178.4 87.6L187.4 73.7L213.9 59.7L234.2 53L244.5 51.6Z"/>
+  </g>
+</svg>
