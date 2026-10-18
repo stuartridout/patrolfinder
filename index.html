@@ -201,10 +201,14 @@
   .tile .tiny{font-size:.62rem;letter-spacing:.08em;opacity:.9}
   .knot{width:20px;height:18px;margin:7px auto -9px;
     clip-path:polygon(0 0,100% 0,100% 100%,50% 62%,0 100%)}
-  .knot-wolves{background:var(--wolves)}
-  .knot-bulls{background:var(--bulls)}
-  .knot-curlews{background:var(--curlews)}
-  .knot-ravens{background:var(--ravens)}
+  /* The Patrol Shoulder Knots, in the colours the Heritage Team checked:
+     Bulls red, Curlews green, Ravens black, Wolves yellow and black. Not one
+     of them is its patrol's flood colour, so they never take the --wolves
+     family of variables. Wolves splits down the notch, one tail each. */
+  .knot-wolves{background:linear-gradient(90deg,#F5B01E 50%,#1A1A1A 50%)}
+  .knot-bulls{background:#C02D24}
+  .knot-curlews{background:#2F7D3F}
+  .knot-ravens{background:#1A1A1A}
 
   .tiny{font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.78}
   .sub{font-size:1.05rem;font-weight:600;opacity:.92;line-height:1.5;margin-top:18px}
