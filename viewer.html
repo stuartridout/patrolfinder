@@ -27,10 +27,13 @@
     --paper:#FAF5E9;
     --navy:#1B3579;
     --sky-line:#D2E8F5;
-    --wolves:#2A5CAD;
-    --bulls:#2F7D3F;
-    --curlews:#F5B01E;
-    --ravens:#C02D24;
+    /* The Patrol Shoulder Knots, as in index.html: Wolves black with a yellow
+       border and yellow accents, Ravens pure black. */
+    --wolves:#000000;
+    --wolves-accent:#F5B01E;
+    --bulls:#C02D24;
+    --curlews:#2F7D3F;
+    --ravens:#000000;
     --rule:rgba(27,53,121,.14);
     /* The rail's unit. The rail is a fixed stack designed against a 16:9
        screen; in plain vw, any window wider than that - a laptop browser,
@@ -315,11 +318,21 @@ const PATROLS = {
   curlews: {name:"Curlews", one:"a Curlew", tagline:"The call that carries."},
   ravens:  {name:"Ravens",  one:"a Raven",  tagline:"Solves it a different way."}
 };
-const PATROL_HEX = {wolves:"#2A5CAD", bulls:"#2F7D3F", curlews:"#F5B01E", ravens:"#C02D24"};
+const PATROL_HEX = {wolves:"#000000", bulls:"#C02D24", curlews:"#2F7D3F", ravens:"#000000"};
+/* Wolves and Ravens are both black, so Wolves carries a yellow border and
+   yellow accents and Ravens carries none. Only Wolves has an entry. */
+const PATROL_ACCENT = {wolves:"#F5B01E"};
 const PAPER = "#FAF5E9";
 const NAVY  = "#1B3579";
-/* Cream on the three dark floods, navy on Curlews yellow — same rule as the app. */
-function onFlood(id){ return id === "curlews" ? NAVY : PAPER; }
+/* Cream on every flood, except that Wolves draws its accents in yellow —
+   same rule as the app. */
+function onFlood(id){ return PATROL_ACCENT[id] || PAPER; }
+/* A patrol's colour as a bar or a dot on the cream rail. Wolves keeps its
+   yellow border even this small, or the rail shows two Ravens. */
+function swatch(p){
+  return `background:${PATROL_HEX[p]}` +
+    (PATROL_ACCENT[p] ? `;box-shadow:inset 0 0 0 calc(.16*var(--ru)) ${PATROL_ACCENT[p]}` : "");
+}
 
 const ROTATE_MS = 12000;      /* one patrol on screen at a time */
 const POLL_MS   = 10000;      /* the wall and the tally, together */
@@ -443,7 +456,7 @@ function paintRail(){
             <span class="head head-${p}" style="background:${NAVY}" aria-hidden="true"></span>
             <span class="pname">${esc(PATROLS[p].name)}</span>
             <span class="pcount">${n.toLocaleString("en-GB")}</span>
-            <span class="bar"><i style="width:${(n / max * 100).toFixed(1)}%;background:${PATROL_HEX[p]}"></i></span>
+            <span class="bar"><i style="width:${(n / max * 100).toFixed(1)}%;${swatch(p)}"></i></span>
           </div>`;
         }).join("")}
       </div>`;
@@ -455,7 +468,7 @@ function paintRail(){
     const hhmm = latestArrival.at.toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit"});
     ticker.innerHTML = `
       <div class="tnew">
-        <span class="dot" style="background:${PATROL_HEX[p]}"></span>
+        <span class="dot" style="${swatch(p)}"></span>
         <span class="twords"><b>${esc(PATROLS[p].one).replace(/^a /,"A ").replace(/^an /,"An ")}</b> just joined the wall
         <span class="ttime">&middot; ${hhmm}</span></span>
       </div>`;
@@ -479,7 +492,10 @@ function paintSpot(entrance){
   const ink = onFlood(id);
   const pt = PATROLS[id];
   spot.style.background = PATROL_HEX[id];
-  spot.style.color = ink;
+  spot.style.color = PAPER;
+  /* Wolves' border. Inset, so it sits inside the flood's own padding and the
+     cards never slide over it. */
+  spot.style.boxShadow = PATROL_ACCENT[id] ? `inset 0 0 0 .55vw ${PATROL_ACCENT[id]}` : "none";
 
   const mine = photos ? photos.filter(i => i.patrol === id) : [];
   const shown = mine.slice(0, SPOT_MAX);
@@ -523,7 +539,7 @@ function paintSpot(entrance){
     <div class="spothead">
       <span class="head head-${id}" style="background:${ink}" aria-hidden="true"></span>
       <div>
-        <h2 class="spotname">${esc(pt.name).toUpperCase()}</h2>
+        <h2 class="spotname" style="color:${ink}">${esc(pt.name).toUpperCase()}</h2>
         <p class="spottag">${esc(pt.tagline)}</p>
       </div>
       <div class="spotcount">

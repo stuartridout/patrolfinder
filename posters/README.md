@@ -6,6 +6,9 @@ wsjpatrol.com on the torn cream panel. Print full-bleed (borderless) for the
 proper flood; ordinary printing leaves a small white frame. The type and QR
 are vector, so the same files scale to A3 cleanly.
 
+The colours are the Patrol Shoulder Knots, as in the app. Wolves is black with
+a yellow frame, set 5mm in from the trim so an ordinary printer keeps it.
+
 `make-posters.mjs` rebuilds them. It lifts the fonts, the head masks and the
 Poland 2027 lockup out of `../index.html` at run time, so the posters cannot
 drift from the app; change the app and rerun. The QR is generated fresh and

@@ -16,7 +16,8 @@ const ADMIN_HTML = `<!DOCTYPE html>
 <style>
   :root{
     --paper:#FAF5E9; --navy:#1B3579; --red:#E13327; --red-ink:#D42B20;
-    --wolves:#2A5CAD; --bulls:#2F7D3F; --curlews:#F5B01E; --ravens:#C02D24;
+    /* The Patrol Shoulder Knots, as in the app: Wolves black with yellow, Ravens pure black. */
+    --wolves:#000000; --wolves-accent:#F5B01E; --bulls:#C02D24; --curlews:#2F7D3F; --ravens:#000000;
     --line:rgba(27,53,121,.16);
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
@@ -66,8 +67,8 @@ const ADMIN_HTML = `<!DOCTYPE html>
   figcaption{padding:8px 10px}
   .chip{display:inline-block;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
     border-radius:99px;padding:3px 8px;color:#fff}
-  .p-wolves{background:var(--wolves)} .p-bulls{background:var(--bulls)}
-  .p-curlews{background:var(--curlews);color:var(--navy)} .p-ravens{background:var(--ravens)}
+  .p-wolves{background:var(--wolves);color:var(--wolves-accent)} .p-bulls{background:var(--bulls)}
+  .p-curlews{background:var(--curlews)} .p-ravens{background:var(--ravens)}
   .st{font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.7;margin-top:5px}
   .st.reported{color:var(--red-ink);opacity:1}
   /* Its own solid colour: .7 opacity on top of another .55 fell below 4.5:1. */
@@ -419,7 +420,14 @@ function paintFilters(){
 
 /* ---------------- numbers ---------------- */
 
-var PATROL_COLOUR = {wolves:"#2A5CAD", bulls:"#2F7D3F", curlews:"#F5B01E", ravens:"#C02D24"};
+var PATROL_COLOUR = {wolves:"#000000", bulls:"#C02D24", curlews:"#2F7D3F", ravens:"#000000"};
+/* Wolves and Ravens are both black, so Wolves keeps its yellow border even as
+   a sliver of bar, or the console shows two Ravens. */
+var PATROL_ACCENT = {wolves:"#F5B01E"};
+function swatch(p){
+  return 'background:' + PATROL_COLOUR[p] +
+    (PATROL_ACCENT[p] ? ';box-shadow:inset 0 0 0 2px ' + PATROL_ACCENT[p] : '');
+}
 
 function bar(counts, title, flagSkew){
   var total = PATROLS.reduce(function(n,p){ return n + (counts[p]||0); }, 0);
@@ -434,11 +442,11 @@ function bar(counts, title, flagSkew){
     '<h3>' + title + (skew ? ' <span class="skew">&#9679; lopsided</span>' : '') + '</h3>' +
     '<div class="balbar" role="img" aria-label="' +
       segs.map(function(x){ return x.p + ' ' + Math.round(x.pct) + ' percent'; }).join(', ') + '">' +
-      segs.map(function(x){ return '<i style="width:' + x.pct.toFixed(1) + '%;background:' + PATROL_COLOUR[x.p] + '"></i>'; }).join('') +
+      segs.map(function(x){ return '<i style="width:' + x.pct.toFixed(1) + '%;' + swatch(x.p) + '"></i>'; }).join('') +
     '</div>' +
     '<div class="ballegend">' +
       segs.map(function(x){
-        return '<span><i style="background:' + PATROL_COLOUR[x.p] + '"></i>' + x.p + ' <b>' + Math.round(x.pct) + '%</b></span>';
+        return '<span><i style="' + swatch(x.p) + '"></i>' + x.p + ' <b>' + Math.round(x.pct) + '%</b></span>';
       }).join('') +
     '</div></div>';
 }
