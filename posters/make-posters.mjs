@@ -30,8 +30,11 @@ const WSJ = idx.match(/const WSJ_MARK = "(data:image\/svg\+xml;base64,[^"]+)"/)[
 
 const SITE = "https://wsjpatrol.com";
 const PAPER = "#FAF5E9", NAVY = "#1B3579";
-const HEX = { wolves: "#2A5CAD", bulls: "#2F7D3F", curlews: "#F5B01E", ravens: "#C02D24" };
-const INK = { wolves: "#2A5CAD", bulls: "#2A6E38", curlews: "#8A6100", ravens: "#B0271E" };
+/* The Patrol Shoulder Knots, as in the app: Wolves black with a yellow
+   border and yellow accents, Ravens pure black. */
+const HEX = { wolves: "#000000", bulls: "#C02D24", curlews: "#2F7D3F", ravens: "#000000" };
+const INK = { wolves: "#000000", bulls: "#B0271E", curlews: "#2A6E38", ravens: "#000000" };
+const ACCENT = { wolves: "#F5B01E" };
 const COPY = {
   wolves:  { name: "Wolves",  one: "WOLF" },
   bulls:   { name: "Bulls",   one: "BULL" },
@@ -89,7 +92,8 @@ const TORN = tornEdge();
 
 function posterHtml(id, headImg) {
   const c = COPY[id];
-  const onFlood = id === "curlews" ? NAVY : PAPER;
+  const onFlood = PAPER;
+  const accent = ACCENT[id] || PAPER;
   return `<!doctype html>
 <html><head><meta charset="utf-8"><style>
 ${fonts}
@@ -113,7 +117,15 @@ ${fonts}
   .ask2{
     font-family:"Bravely",serif;font-weight:400;
     font-size:116pt;line-height:1;letter-spacing:.015em;margin-top:5mm;
-    white-space:nowrap;
+    white-space:nowrap;color:${accent};
+  }
+  /* Wolves' yellow border. Inset rather than at the trim, so it survives a
+     printer that cannot print to the edge, and run on under the torn panel so
+     the paper is laid over it - never drawn on the cream. */
+  .frame{
+    position:absolute;left:5mm;right:5mm;top:5mm;height:240mm;
+    border:3mm solid ${accent};border-bottom:0;
+    display:${ACCENT[id] ? "block" : "none"};
   }
   .panel{
     position:absolute;left:0;right:0;bottom:0;height:101mm;
@@ -150,9 +162,10 @@ ${fonts}
   .wsj{height:17mm;display:block}
 </style></head>
 <body>
+  <div class="frame"></div>
   <div class="flood">
     <p class="eyebrow">GILWELL REUNION &middot; 120 YEARS OF PATROLS</p>
-    <div class="postmark">${POSTMARK(onFlood)}</div>
+    <div class="postmark">${POSTMARK(accent)}</div>
     <img class="head" src="${headImg}" alt="">
     <h1><span class="ask1">ARE YOU A</span><br><span class="ask2">${c.one}?</span></h1>
   </div>
@@ -184,7 +197,7 @@ const browser = await chromium.launch(launchOpts);
 const page = await browser.newPage({ viewport: { width: 1600, height: 1500 } });
 const heads = {};
 for (const id of Object.keys(COPY)) {
-  const tint = id === "curlews" ? NAVY : PAPER;
+  const tint = ACCENT[id] || PAPER;
   await page.setContent(`<style>
     body{margin:0}
     .head{display:block;width:1600px;height:1500px;background:${tint};

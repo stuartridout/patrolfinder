@@ -33,10 +33,19 @@
     --sky:#AEDCF2;
     --sky-line:#D2E8F5;
     --purple:#7413DC;
-    --wolves:#2A5CAD;
-    --bulls:#2F7D3F;
-    --curlews:#F5B01E;
-    --ravens:#C02D24;
+    /* The patrol colours are the Patrol Shoulder Knots the boys wore at
+       Brownsea, as the Heritage Team checked them: Bulls red, Curlews green,
+       Ravens black, Wolves yellow and black. Two black floods would be one
+       colour twice, so Wolves is black with a yellow border and yellow
+       accents and Ravens stays pure black. */
+    --wolves:#000000;
+    --wolves-accent:#F5B01E;
+    --bulls:#C02D24;
+    --curlews:#2F7D3F;
+    --ravens:#000000;
+    /* A plain success green for ticks and thank-yous. It used to borrow
+       --bulls, which stopped being green when the patrols took their knots. */
+    --green:#2F7D3F;
     --rule:rgba(27,53,121,.14);
     --red-ink:#D42B20;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
@@ -86,7 +95,14 @@
   body.result-wolves{background:var(--wolves);color:#fff}
   body.result-bulls{background:var(--bulls);color:#fff}
   body.result-ravens{background:var(--ravens);color:#fff}
-  body.result-curlews{background:var(--curlews);color:var(--navy)}
+  body.result-curlews{background:var(--curlews);color:#fff}
+  /* Wolves' border. Fixed to the window rather than drawn round the content,
+     so it frames the whole flood however far the page scrolls. Above the
+     ribbon, which then hangs from it; below the toast. */
+  body.result-wolves::after{
+    content:"";position:fixed;inset:0;z-index:10;pointer-events:none;
+    border:6px solid var(--wolves-accent);
+  }
 
   /* masthead: official marks live on a clean white strip, always */
   .mast{position:relative;z-index:3;background:#fff;border-bottom:1px solid var(--rule)}
@@ -120,7 +136,7 @@
     display:none;
   }
   body.result-mode .ribbon{display:block}
-  body.result-curlews .ribbon{background:rgba(27,53,121,.9)}
+  body.result-wolves .ribbon{background:var(--wolves-accent)}
   /* Not on the card studio. Its banner is a full-width white bar hard against
      the top, so the white ribbon runs into it and the two read as one torn
      shape rather than two deliberate ones. */
@@ -150,12 +166,12 @@
     font-size:1.85rem;line-height:1.12;margin:12px 0 6px;
   }
   .centered{align-self:center;text-align:center}
-  /* result banners: white slab, patrol colour type. Navy slab on Curlews yellow */
+  /* result banners: white slab, patrol colour type. Yellow slab on Wolves */
   body.result-mode .banner{background:#fff}
-  body.result-wolves .banner{color:var(--wolves)}
+  body.result-wolves .banner{background:var(--wolves-accent);color:var(--wolves)}
   body.result-bulls .banner{color:var(--bulls)}
   body.result-ravens .banner{color:var(--ravens)}
-  body.result-curlews .banner{background:var(--navy);color:#fff}
+  body.result-curlews .banner{color:var(--curlews)}
 
   /* 120 years postmark */
   .postmark{color:var(--red);opacity:.95;pointer-events:none}
@@ -187,7 +203,7 @@
   .postmark-intro{flex:none;width:clamp(78px,23vw,108px);transform:rotate(-8deg);margin-top:12px}
   .postmark-result{position:absolute;top:0;right:-4px;width:84px;transform:rotate(8deg)}
   body.result-mode .postmark{color:rgba(255,255,255,.9)}
-  body.result-curlews .postmark{color:rgba(27,53,121,.85)}
+  body.result-wolves .postmark{color:var(--wolves-accent)}
 
   /* patrol badges (illustrative, stitched, not buttons) */
   .patrolrow{display:flex;gap:10px;margin:18px 0 4px}
@@ -201,7 +217,9 @@
   .tile .tiny{font-size:.62rem;letter-spacing:.08em;opacity:.9}
   .knot{width:20px;height:18px;margin:7px auto -9px;
     clip-path:polygon(0 0,100% 0,100% 100%,50% 62%,0 100%)}
-  .knot-wolves{background:var(--wolves)}
+  /* The knot itself, so Wolves is drawn as it was worn - yellow and black,
+     split down the notch, one tail each - rather than as its flood. */
+  .knot-wolves{background:linear-gradient(90deg,var(--wolves-accent) 50%,var(--wolves) 50%)}
   .knot-bulls{background:var(--bulls)}
   .knot-curlews{background:var(--curlews)}
   .knot-ravens{background:var(--ravens)}
@@ -243,8 +261,7 @@
   }
   body.result-mode .btn{background:transparent;border-color:rgba(255,255,255,.85);color:#fff;text-align:center}
   body.result-mode .btn.primary{background:#fff;border-color:#fff;color:var(--navy)}
-  body.result-curlews .btn{border-color:rgba(27,53,121,.75);color:var(--navy)}
-  body.result-curlews .btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+  body.result-wolves .btn.primary{background:var(--wolves-accent);border-color:var(--wolves-accent);color:var(--wolves)}
 
   .backlink{
     font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
@@ -274,12 +291,12 @@
   .rhero{display:flex;flex-direction:column;align-items:center;text-align:center}
   .rheadtext{display:flex;flex-direction:column;align-items:center}
   .result-head{width:150px;height:128px;background:#fff;margin-bottom:8px;animation:pop .45s cubic-bezier(.2,.8,.3,1.2) both}
-  body.result-curlews .result-head{background:var(--navy)}
+  body.result-wolves .result-head{background:var(--wolves-accent)}
   @keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
   .tagline{font-family:var(--serif);font-size:1.25rem;font-weight:700;font-style:italic;line-height:1.35;margin-top:4px}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0;justify-content:center}
   /* No opacity on any of the three result-screen labels below. Opacity on a
-     parent composites the whole subtree, so cream at .9 over Bulls green
+     parent composites the whole subtree, so cream at .9 over Curlews green
      lands at 4.46:1 and fails. They only ever sit on a patrol flood, where
      the full-strength colour is the one that passes. */
   .chip{font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
@@ -310,7 +327,7 @@
     background:var(--red-ink);border-color:var(--red-ink);color:#fff;font-weight:800;padding:12px 16px;
   }
   body.result-mode :is(.card,.cardcta,.wallcta) .btn.go,
-  body.result-curlews :is(.card,.cardcta,.wallcta) .btn.go{
+  body.result-wolves :is(.card,.cardcta,.wallcta) .btn.go{
     background:var(--red-ink);border-color:var(--red-ink);color:#fff;
   }
   .micro{font-size:.68rem;opacity:.78;margin-top:8px}
@@ -320,7 +337,7 @@
     text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px}
   .jlink .arr{display:inline-block;text-decoration:none;margin-left:7px}
   .jlink:focus-visible{outline:3px solid var(--red);outline-offset:2px}
-  .thanks{margin-top:12px;font-weight:800;color:var(--bulls)}
+  .thanks{margin-top:12px;font-weight:800;color:var(--green)}
   .stack{display:flex;flex-direction:column;gap:10px;margin-top:16px}
   .history{font-size:.7rem;line-height:1.45;margin-top:14px}
 
@@ -492,6 +509,9 @@
   .tallybar .seg-bulls{background:var(--bulls)}
   .tallybar .seg-curlews{background:var(--curlews)}
   .tallybar .seg-ravens{background:var(--ravens)}
+  /* Black with a yellow border, here as everywhere, or Wolves and Ravens
+     are two black swatches in the key. */
+  .seg-wolves{box-shadow:inset 0 0 0 2px var(--wolves-accent)}
   .tallykey{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:.72rem;font-weight:700}
   .tallykey span{display:flex;align-items:center;gap:6px}
   .tallykey i{width:10px;height:10px;border-radius:3px;flex:none}
@@ -544,7 +564,7 @@
   .filebtn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
   .privacy{
     margin-top:12px;padding:12px 14px;border-radius:12px;
-    background:rgba(47,125,63,.1);border-left:4px solid var(--bulls);
+    background:rgba(47,125,63,.1);border-left:4px solid var(--green);
     font-size:.78rem;line-height:1.5;font-weight:600;color:var(--navy);
   }
   .privacy b{font-weight:800}
@@ -557,7 +577,7 @@
   .warnbox li{margin-bottom:4px}
   .consent{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:.8rem;
     font-weight:700;line-height:1.45;cursor:pointer;color:var(--navy)}
-  .consent input{width:22px;height:22px;flex:none;margin-top:1px;accent-color:var(--bulls)}
+  .consent input{width:22px;height:22px;flex:none;margin-top:1px;accent-color:var(--green)}
   .btn.go[disabled],.btn.primary[disabled]{opacity:.5;cursor:not-allowed}
 
   /* ============================================================
@@ -719,11 +739,11 @@
      result screen belongs in this list: .cardcta was added later and spent a
      build with an invisible white pill on white because it was not. */
   body.result-mode :is(.card,.cardcta,.wallcta) .btn,
-  body.result-curlews :is(.card,.cardcta,.wallcta) .btn{
+  body.result-wolves :is(.card,.cardcta,.wallcta) .btn{
     background:#fff;border-color:var(--sky-line);color:var(--navy);text-align:center;
   }
   body.result-mode :is(.card,.cardcta,.wallcta) .btn.primary,
-  body.result-curlews :is(.card,.cardcta,.wallcta) .btn.primary{
+  body.result-wolves :is(.card,.cardcta,.wallcta) .btn.primary{
     background:var(--navy);border-color:var(--navy);color:#fff;
   }
   :is(.card,.cardcta,.wallcta) .stack .btn,
@@ -1121,18 +1141,24 @@ async function submitEmail(id){
 /* ============================================================
    SHARED HELPERS
    ============================================================ */
-const PATROL_HEX  = {wolves:"#2A5CAD", bulls:"#2F7D3F", curlews:"#F5B01E", ravens:"#C02D24"};
-/* Curlews yellow is unreadable as type on cream, so cards ink it darker.
+/* The Patrol Shoulder Knots: Bulls red, Curlews green, Ravens black, Wolves
+   yellow and black. Same values as the --wolves family in the stylesheet. */
+const PATROL_HEX  = {wolves:"#000000", bulls:"#C02D24", curlews:"#2F7D3F", ravens:"#000000"};
+/* Type on cream. Bulls and Curlews ink a shade darker than their floods, and
+   Wolves inks black, never yellow: yellow is unreadable as type on cream.
    The flood colour itself never changes: the patrol colours are historical. */
-const PATROL_INK  = {wolves:"#2A5CAD", bulls:"#2A6E38", curlews:"#8A6100", ravens:"#B0271E"};
+const PATROL_INK  = {wolves:"#000000", bulls:"#B0271E", curlews:"#2A6E38", ravens:"#000000"};
+/* Wolves and Ravens are both black, so Wolves carries a yellow border and
+   yellow accents and Ravens carries none. Only Wolves has an entry. */
+const PATROL_ACCENT = {wolves:"#F5B01E"};
 const PAPER = "#FAF5E9";
 const NAVY  = "#1B3579";
 const SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
 const SANS  = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
 const PATROL_IDS = ["wolves","bulls","curlews","ravens"];
 
-/* Cream on the three dark floods, navy on Curlews yellow. */
-function onFlood(id){ return id === "curlews" ? NAVY : PAPER; }
+/* Cream on every flood, except that Wolves draws its accents in yellow. */
+function onFlood(id){ return PATROL_ACCENT[id] || PAPER; }
 
 function apiUrl(path){
   return API_BASE ? API_BASE.replace(/\/+$/,"") + path : "";
@@ -1519,6 +1545,11 @@ function drawStamp(ctx, headImg, id, cx, cy, r){
   ctx.setLineDash([]);
   ctx.fillStyle = PATROL_HEX[id];
   ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+  if(PATROL_ACCENT[id]){
+    ctx.strokeStyle = PATROL_ACCENT[id];
+    ctx.lineWidth = r*0.07;
+    ctx.beginPath(); ctx.arc(cx, cy, r - r*0.035, 0, Math.PI*2); ctx.stroke();
+  }
   ctx.restore();
   drawHead(ctx, headImg, onFlood(id), cx - r*0.62, cy - r*0.56, r*1.24, r*1.12);
 }
@@ -1555,10 +1586,11 @@ function drawProfileCard(ctx, W, H, st, id, pt, head){
     drawHead(ctx, head, onFlood(id), W*0.19, H*0.14, W*0.62, H*0.50, 0.96);
   }
 
-  /* Cream rim, so the square reads as a badge and the circle reads as a rim. */
+  /* Cream rim, so the square reads as a badge and the circle reads as a rim.
+     Wolves' rim is its yellow border. */
   const rimW = S*0.032;
   ctx.save();
-  ctx.strokeStyle = PAPER;
+  ctx.strokeStyle = PATROL_ACCENT[id] || PAPER;
   ctx.lineWidth = rimW;
   ctx.beginPath(); ctx.arc(cx, cy, S/2 - rimW/2, 0, Math.PI*2); ctx.stroke();
   ctx.restore();
@@ -1580,7 +1612,7 @@ function drawProfileCard(ctx, W, H, st, id, pt, head){
   ctx.closePath();
   ctx.fill();
   ctx.globalAlpha = st.img ? 1 : 0.35;
-  ctx.strokeStyle = st.img ? PAPER : PATROL_INK[id];
+  ctx.strokeStyle = st.img ? onFlood(id) : PATROL_INK[id];
   ctx.lineWidth = S*0.007;
   ctx.beginPath();
   ctx.arc(cx, cy, innerR, Math.PI/2 - half, Math.PI/2 + half, false);
@@ -1640,9 +1672,21 @@ function drawPanelCard(ctx, W, H, st, id, pt, head){
     drawHead(ctx, head, onFlood(id), W*0.18, photoH*0.16, W*0.64, photoH*0.62, 0.95);
   }
 
+  /* Wolves' yellow border, round the flood or the photo. It runs on under the
+     torn panel, so the paper is laid over it rather than the border stopping
+     short. Never on the cream, where yellow all but disappears. */
+  if(PATROL_ACCENT[id]){
+    const bw = W*0.022;
+    ctx.save();
+    ctx.strokeStyle = PATROL_ACCENT[id];
+    ctx.lineWidth = bw;
+    ctx.strokeRect(bw/2, bw/2, W - bw, photoH + bw);
+    ctx.restore();
+  }
+
   if(!wall){
     drawPostmark(ctx, W - pad - W*0.115, (story ? H*0.115 : W*0.16), W*0.115,
-                 st.img ? PAPER : onFlood(id), st.img ? 0.95 : 0.5, !!st.img);
+                 onFlood(id), st.img ? 0.95 : 0.5, !!st.img);
   }
 
   /* Torn cream panel. */
