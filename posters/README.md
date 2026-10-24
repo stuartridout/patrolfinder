@@ -1,6 +1,6 @@
 # Posters
 
-Four A4 teaser posters for Gilwell Reunion, one per patrol: the head
+Four A4 teaser posters from Gilwell Reunion, one per patrol: the head
 silhouette over "ARE YOU A WOLF?" (BULL / CURLEW / RAVEN), with a QR to
 wsjpatrol.com on the torn cream panel. Print full-bleed (borderless) for the
 proper flood; ordinary printing leaves a small white frame. The type and QR
@@ -9,9 +9,14 @@ are vector, so the same files scale to A3 cleanly.
 The colours are the Patrol Shoulder Knots, as in the app. Wolves is black with
 a yellow frame, set 5mm in from the trim so an ordinary printer keeps it.
 
-`make-posters.mjs` rebuilds them. It lifts the fonts, the head masks and the
-Poland 2027 lockup out of `../index.html` at run time, so the posters cannot
-drift from the app; change the app and rerun. The QR is generated fresh and
+These are still the Reunion design (the eyebrow says Gilwell Reunion). The site
+was redesigned for the Jamboree in October 2026 and the posters have not been
+yet; they need their own pass before they are printed again.
+
+`make-posters.mjs` rebuilds them. It lifts the fonts and the four patrol marks
+(vector paths) out of `../index.html` at run time, and the Poland 2027 mark
+from `wsj-mark.svg` here, so the posters cannot drift from the app; change the
+app and rerun. The QR is generated fresh and
 the build fails unless a render of every poster machine-decodes back to
 https://wsjpatrol.com.
 

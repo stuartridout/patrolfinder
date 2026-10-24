@@ -1,9 +1,9 @@
 /* The four A4 teaser posters, one per patrol, rendered in the app's own
    design language. Run from this folder; the PDFs land beside the script.
 
-   Everything visual is lifted from ../index.html at run time - the Bravely
-   and Galano subsets, the four head masks, the Poland 2027 lockup - so the
-   posters cannot drift from the app. The QR is generated fresh and then
+   The fonts and the four patrol marks are lifted from ../index.html at run
+   time, so the posters cannot drift from the app; the Poland 2027 mark is
+   wsj-mark.svg beside this script. The QR is generated fresh and then
    decode-verified from a render of each poster, never trusted by eye.
 
    Needs: npm install playwright qrcode jsqr pngjs
@@ -21,12 +21,14 @@ const HERE = path.dirname(new URL(import.meta.url).pathname);
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "posters-"));
 const idx = fs.readFileSync(path.join(HERE, "..", "index.html"), "utf8");
 
-/* The app's font faces and head masks, verbatim. */
+/* The app's font faces and patrol marks, verbatim. The marks are vector
+   paths, so they print sharp at any size. */
 const fonts = (idx.match(/@font-face\{[\s\S]*?\}/g) || []).join("\n");
 if (!fonts.includes("Bravely") || !fonts.includes("Galano")) throw new Error("fonts not found in index.html");
-const headCss = (idx.match(/\.head-(?:wolves|bulls|curlews|ravens)\{[^}]*\}/g) || []).join("\n");
-if (headCss.split("\n").length !== 4) throw new Error("head masks not found in index.html");
-const WSJ = idx.match(/const WSJ_MARK = "(data:image\/svg\+xml;base64,[^"]+)"/)[1];
+const headsSrc = idx.match(/const HEADS = (\{[\s\S]*?\n\});/);
+if (!headsSrc) throw new Error("patrol marks not found in index.html");
+const HEADS = Function("return " + headsSrc[1])();
+const WSJ = "data:image/svg+xml;base64," + fs.readFileSync(path.join(HERE, "wsj-mark.svg")).toString("base64");
 
 const SITE = "https://wsjpatrol.com";
 const PAPER = "#FAF5E9", NAVY = "#1B3579";
@@ -90,7 +92,7 @@ function tornEdge() {
 }
 const TORN = tornEdge();
 
-function posterHtml(id, headImg) {
+function posterHtml(id) {
   const c = COPY[id];
   const onFlood = PAPER;
   const accent = ACCENT[id] || PAPER;
@@ -103,7 +105,7 @@ ${fonts}
   body{background:${HEX[id]};overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .flood{position:relative;height:200mm;color:${onFlood};padding:14mm 16mm 0;text-align:center}
   .eyebrow{
-    font-family:"Galano Grotesque",sans-serif;font-weight:700;font-size:10.5pt;
+    font-family:"Galano",sans-serif;font-weight:700;font-size:10.5pt;
     letter-spacing:.18em;
   }
   .postmark{position:absolute;top:12mm;right:14mm;width:34mm;height:34mm}
@@ -143,10 +145,10 @@ ${fonts}
     font-size:27pt;line-height:1.02;color:${NAVY};
   }
   .how{
-    font-family:"Galano Grotesque",sans-serif;font-weight:600;
+    font-family:"Galano",sans-serif;font-weight:700;
     font-size:12pt;line-height:1.45;margin-top:4.5mm;max-width:121mm;
   }
-  .url{font-family:"Galano Grotesque",sans-serif;font-weight:700;font-size:15pt;margin-top:3.5mm}
+  .url{font-family:"Galano",sans-serif;font-weight:700;font-size:15pt;margin-top:3.5mm}
   .foot{
     position:absolute;left:16mm;right:16mm;bottom:9mm;
     display:flex;align-items:flex-end;justify-content:space-between;
@@ -156,7 +158,7 @@ ${fonts}
     font-size:13pt;color:${INK[id]};
   }
   .sig span{
-    display:block;font-family:"Galano Grotesque",sans-serif;font-weight:600;
+    display:block;font-family:"Galano",sans-serif;font-weight:700;
     font-size:8pt;letter-spacing:.14em;color:${NAVY};margin-top:1.2mm;
   }
   .wsj{height:17mm;display:block}
@@ -166,7 +168,7 @@ ${fonts}
   <div class="flood">
     <p class="eyebrow">GILWELL REUNION &middot; 120 YEARS OF PATROLS</p>
     <div class="postmark">${POSTMARK(accent)}</div>
-    <img class="head" src="${headImg}" alt="">
+    <svg class="head" viewBox="0 0 ${HEADS[id].w} ${HEADS[id].h}" aria-hidden="true"><path fill="${accent}" fill-rule="evenodd" d="${HEADS[id].d}"/></svg>
     <h1><span class="ask1">ARE YOU A</span><br><span class="ask2">${c.one}?</span></h1>
   </div>
   <div class="panel">
@@ -192,27 +194,11 @@ const launchOpts = fs.existsSync("/opt/pw-browsers/chromium")
   ? { executablePath: "/opt/pw-browsers/chromium" } : {};
 const browser = await chromium.launch(launchOpts);
 
-/* The head masks tint by background in the app; print rasterises masks less
-   reliably, so bake each head into a tinted transparent PNG first. */
-const page = await browser.newPage({ viewport: { width: 1600, height: 1500 } });
-const heads = {};
-for (const id of Object.keys(COPY)) {
-  const tint = ACCENT[id] || PAPER;
-  await page.setContent(`<style>
-    body{margin:0}
-    .head{display:block;width:1600px;height:1500px;background:${tint};
-      -webkit-mask-size:contain;mask-size:contain;
-      -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-      -webkit-mask-position:center;mask-position:center;}
-    ${headCss}
-  </style><span class="head head-${id}"></span>`);
-  heads[id] = path.join(TMP, `head-${id}.png`);
-  await page.locator(".head").screenshot({ path: heads[id], omitBackground: true });
-}
+const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
 
 for (const id of Object.keys(COPY)) {
   const file = path.join(TMP, `poster-${id}.html`);
-  fs.writeFileSync(file, posterHtml(id, heads[id]));
+  fs.writeFileSync(file, posterHtml(id));
   await page.setViewportSize({ width: 794, height: 1123 });
   await page.goto("file://" + file);
   await page.waitForTimeout(300);

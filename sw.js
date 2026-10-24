@@ -1,9 +1,9 @@
 /* Which patrol are you? — service worker.
-   Offline-first shell so the quiz still runs on the Gilwell field with no signal.
+   Offline-first shell so the quiz still runs on a campsite with no signal.
 
    Bump CACHE whenever index.html changes, or returning visitors keep the old copy
    until the network check succeeds. The Publish workflow does not do this for you. */
-const CACHE = 'patrolfinder-v28';
+const CACHE = 'patrolfinder-v29';
 
 /* Relative so this works at /patrolfinder/ on Pages and at / on any other host. */
 const SHELL = [
