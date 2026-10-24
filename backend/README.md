@@ -91,7 +91,7 @@ read a 503 on a freshly created resource as provisioning lag.
 Overridable with environment variables: `RG`, `LOCATION`, `APP`, `STORAGE`,
 `REUNION_ENDS`, `ALLOWED_ORIGIN`, `ADMIN_TOKEN`.
 
-`REUNION_ENDS` must match the value in `index.html`. The app shows people the
+`REUNION_ENDS` must match the value in `index.html` (2027-08-24 for the Jamboree, so the wall is deleted on 31 August 2027). The app shows people the
 deletion date it computes from that value, so if the two disagree the app is
 telling people something the server will not do.
 

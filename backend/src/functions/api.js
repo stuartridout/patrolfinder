@@ -22,7 +22,7 @@
  *   POST /console/delete       {id} gone, file and all
  *   GET  /console/stats        counts and sign-up total
  *   GET  /console/signups.csv  the sign-up list
- *   GET  /console/runs.csv     every quiz run: era, answers, scores, patrol
+ *   GET  /console/runs.csv     every quiz run: era, language, answers, scores, patrol
  *   POST /console/purge        delete every photo now
  *   POST /console/reset        {what: tally|signups|photos|all} start clean
  *
@@ -157,8 +157,11 @@ async function handler(request, context){
          shape rather than against a list, so adding a set to the app does not
          need a matching deploy here. */
       const era = /^[a-z0-9-]{1,12}$/.test(String(body.era || "")) ? String(body.era) : "";
+      /* The language the quiz was taken in, as a two-letter code, for the same
+         reason: a question can lean one way in translation. */
+      const lang = /^[a-z]{2}$/.test(String(body.lang || "")) ? String(body.lang) : "";
       try{
-        await store.addRun({patrol: patrol, answers: answers, scores: scores, tied: tied, era: era});
+        await store.addRun({patrol: patrol, answers: answers, scores: scores, tied: tied, era: era, lang: lang});
       }catch(err){
         context.error("run not recorded", err);
       }
@@ -297,7 +300,9 @@ async function handler(request, context){
       };
       const all = blank();
       const byEra = {};
+      const byLang = {};
       for(const r of runs){
+        byLang[r.lang || ""] = (byLang[r.lang || ""] || 0) + 1;
         const bucket = byEra[r.era] || (byEra[r.era] = blank());
         for(const b of [all, bucket]){
           b.runs++;
@@ -315,7 +320,7 @@ async function handler(request, context){
       return json({
         tally: tally, signups: signups.length, photos: byStatus,
         runs: all.runs, ties: all.ties, picks: all.picks, byQuestion: all.byQuestion,
-        byEra: byEra,
+        byEra: byEra, byLang: byLang,
         reunionEnds: reunionEnds(), deletedAfter: new Date(cutoffMs()).toISOString()
       });
     }
@@ -323,12 +328,12 @@ async function handler(request, context){
     if(path === "/console/runs.csv" && request.method === "GET"){
       const runs = await store.listRuns();
       const width = runs.reduce((n, r) => Math.max(n, r.answers.length), 0);
-      const head = ["when", "era"]
+      const head = ["when", "era", "lang"]
         .concat(Array.from({length: width}, (_, i) => "q" + (i + 1)))
         .concat(store.PATROLS.map(p => "score_" + p))
         .concat(["patrol", "tied"]);
       const csv = [head.join(",")].concat(runs.map(r => {
-        const cells = [new Date(r.created).toISOString(), r.era];
+        const cells = [new Date(r.created).toISOString(), r.era, r.lang];
         for(let i = 0; i < width; i++) cells.push(r.answers[i] || "");
         for(const p of store.PATROLS) cells.push(r.scores[p]);
         cells.push(r.patrol, r.tied ? '"' + r.tied + '"' : "");
