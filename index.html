@@ -543,25 +543,25 @@
 <script>
 /* ============================================================
    LANGUAGES
-   English is the source. French, Polish, Spanish and Arabic are
-   DRAFTS for layout and for the translators to start from: none of
-   them has been checked by a native speaker, and the water question
-   in every one of them needs the Safety Team before it goes anywhere.
+   English is the source. All five are switched on (Stuart, 25 Oct
+   2026). French, Polish, Spanish and Arabic were drafted in session:
+   no native speaker has read them yet, and the water question in
+   each has not been through the Safety Team. A correction is a
+   string edit here, nothing more.
 
-   A language only appears in the menu once `ready` is true. Until
-   then it is reachable by link alone (?lang=pl), with a banner that
-   says it is a draft, so the layout can be tested without anyone
-   being shown an unchecked translation of a safety question.
+   A language only appears in the menu once `ready` is true. Set it
+   false and the language drops out of the menu and is reachable by
+   link alone (?lang=pl), with a banner that says it is a draft.
 
    Every string falls back to English, so a gap shows English rather
    than a blank.
    ============================================================ */
 const LANGS = [
   {code:"en", name:"English",  short:"EN", locale:"en-GB",        ready:true},
-  {code:"fr", name:"Français", short:"FR", locale:"fr-FR",        ready:false},
-  {code:"pl", name:"Polski",   short:"PL", locale:"pl-PL",        ready:false},
-  {code:"es", name:"Español",  short:"ES", locale:"es-ES",        ready:false},
-  {code:"ar", name:"العربية",  short:"ع",  locale:"ar-u-nu-latn", ready:false, rtl:true}
+  {code:"fr", name:"Français", short:"FR", locale:"fr-FR",        ready:true},
+  {code:"pl", name:"Polski",   short:"PL", locale:"pl-PL",        ready:true},
+  {code:"es", name:"Español",  short:"ES", locale:"es-ES",        ready:true},
+  {code:"ar", name:"العربية",  short:"ع",  locale:"ar-u-nu-latn", ready:true, rtl:true}
 ];
 
 const STR = {};
