@@ -47,7 +47,7 @@ The email sign-up for the Pavilion went with the Reunion version; the API still 
 
 ## Languages
 
-English, French, Polish, Spanish and Arabic (right to left) live in the `STR` table in `index.html`. Only English is checked so far. The other four are drafts: a language appears in the menu only once its `ready` flag is true, and until then it is reachable by link alone (`?lang=pl`, `?lang=ar`) with a banner saying it is a draft. The water question in every language needs the Safety Team before it is marked ready. Every string falls back to English.
+English, French, Polish, Spanish and Arabic (right to left) live in the `STR` table in `index.html`. All five are switched on, and a phone set to one of them opens in it; anyone can change it from the button in the top bar. The French, Polish, Spanish and Arabic text was drafted in session and has not yet been read by a native speaker, and the water question in those languages has not been through the Safety Team, so corrections are expected: each is a string edit in `STR`. Setting a language's `ready` flag to false takes it out of the menu again; it stays reachable by link (`?lang=pl`) with a banner saying it is a draft. Every string falls back to English.
 
 See `backend/README.md` to deploy it: `az login`, pick the subscription, `./deploy.sh`.
 
