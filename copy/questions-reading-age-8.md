@@ -1,4 +1,4 @@
-<!-- Snapshot of the Claude doc https://claude.ai/artifact/TancZEPLt7HKSWhzATDB11 as Stuart edited it on 25 Oct 2026. A proposal waiting on the Safety Team (Q6) and the translators; nothing here is on the site yet. -->
+<!-- Snapshot of the Claude doc https://claude.ai/artifact/TancZEPLt7HKSWhzATDB11 as Stuart edited it on 25 Oct 2026. The "After" wording went live the same day in English, with French, Polish, Spanish and Arabic redrafted from it in session. Still waiting on: the Safety Team (Q6, unchanged on the site) and the translators. -->
 
 # Patrolfinder questions at reading age 8
 
