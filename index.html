@@ -2060,12 +2060,19 @@ function drawKnot(ctx, id, x, y, w){
 
 /* Where the photo goes on each card, before its slanted cut. One definition,
    because the drawing and the pan clamp both need it, and they drifted apart
-   once when they were separate numbers. */
+   once when they were separate numbers. The photo is most of the card: the
+   patrol colour is a band at the foot, not a flood, so a person in front of
+   trees is still the picture rather than a green card with a face in it. */
 function photoRegion(fmt, W, H){
-  if(fmt === "profile") return {x:W*0.037, y:H*0.037, w:W*0.926, h:H*0.593, cut:W*0.089, side:"left"};
-  if(fmt === "post")    return {x:0, y:0, w:W, h:H*0.593, cut:W*0.104, side:"left"};
-  if(fmt === "story")   return {x:0, y:H*0.130, w:W, h:H*0.458, cut:W*0.104, side:"right"};
-  return {x:0, y:0, w:W, h:H*0.722, cut:W*0.104, side:"left"};
+  if(fmt === "profile") return {x:0, y:0, w:W, h:H, cut:0, side:"left"};
+  if(fmt === "post")    return {x:0, y:0, w:W, h:H*0.80, cut:W*0.07, side:"left"};
+  if(fmt === "story")   return {x:0, y:0, w:W, h:H*0.74, cut:W*0.08, side:"left"};
+  return {x:0, y:0, w:W, h:H*0.76, cut:W*0.07, side:"left"};
+}
+/* The y of the photo's slanted bottom edge at x. */
+function edgeY(r, x){
+  const t = (x - r.x) / r.w;
+  return r.side === "left" ? r.y + r.h - r.cut * (1 - t) : r.y + r.h - r.cut * t;
 }
 function regionPath(ctx, r){
   ctx.beginPath();
@@ -2164,45 +2171,91 @@ function drawCard(ctx, W, H, st){
   ctx.restore();
 }
 
+/* The knot and a small-caps caption. Over a photo it sits on a cream plate,
+   because the photo could be any colour at all; on the patrol's own colour it
+   needs none. x is the start edge, or null to centre the row. */
+function captionRow(ctx, T, id, text, x, baseY, W, size, plate){
+  const knotW = size * 1.38, gap = size * 0.8;
+  ctx.font = `800 ${size}px ${CARD_FONT_TEXT}`;
+  spaced(ctx, T.ar ? "0px" : "0.16em");
+  const capW = ctx.measureText(text).width, rowW = knotW + gap + capW;
+  const left = x === null ? (W - rowW) / 2 : (T.rtl ? W - x - rowW : x);
+  const knotTop = baseY - knotW * 1.1;
+  if(plate){
+    const pad = size * 0.8;
+    ctx.fillStyle = CREAM;
+    ctx.fillRect(left - pad, knotTop - size * 0.5, rowW + pad * 2, knotW * 1.5 + size);
+  }
+  drawKnot(ctx, id, T.rtl ? left + capW + gap : left, knotTop, knotW);
+  ctx.fillStyle = plate ? NAVY : CREAM;
+  ctx.direction = T.rtl ? "rtl" : "ltr";
+  ctx.textAlign = "left";
+  ctx.fillText(text, T.rtl ? left : left + knotW + gap, baseY);
+  spaced(ctx, "0px");
+}
+/* The ring round the profile circle: the patrol's colour, Wolves' yellow. */
+function profileRing(ctx, id, W, H, R){
+  ctx.save();
+  ctx.strokeStyle = PATROL_ACCENT[id] || PATROL_HEX[id];
+  ctx.lineWidth = W * 0.022;
+  ctx.beginPath(); ctx.arc(W / 2, H / 2, R - W * 0.011, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+/* The patrol band across the foot of the profile circle, cut on the slant. */
+function profileBand(ctx, id, W, H, T){
+  const hi = H * 0.705, lo = H * 0.745;
+  ctx.fillStyle = PATROL_HEX[id];
+  ctx.beginPath();
+  ctx.moveTo(0, T.rtl ? lo : hi); ctx.lineTo(W, T.rtl ? hi : lo);
+  ctx.lineTo(W, H); ctx.lineTo(0, H);
+  ctx.closePath(); ctx.fill();
+}
+
 /* Profile, 1080 square, shown as a round avatar: everything important sits
-   inside the circle. Wolves gets its yellow ring inside the circle. */
+   inside the circle. With a photo, the photo is the whole square and the
+   patrol is a ring and a band across the foot of the circle; with none, the
+   patrol colour and the mark carry it. */
 function drawProfileCard(ctx, W, H, st){
   const id = st.patrol, T = cardText(id), ink = onFlood(id);
   const cx = W / 2, cy = H / 2, R = W * 0.463;
   ctx.fillStyle = PATROL_HEX[id];
   ctx.fillRect(0, 0, W, H);
-  ctx.save();
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
   if(st.img){
     drawPhoto(ctx, st.img, photoRegion("profile", W, H), st);
-    drawMark(ctx, id, T.rtl ? W * 0.082 : W * 0.640, H * 0.618, W * 0.278, W * 0.278, ink, T.rtl);
-  }else{
-    drawMark(ctx, id, W * 0.30, H * 0.06, W * 0.62, W * 0.62, ink, T.rtl);
-  }
-  ctx.restore();
-  const x = W * 0.167;
-  ctx.fillStyle = ink;
-  fitFont(ctx, T.name, W * (st.img ? 0.46 : 0.62), W * 0.118, T.dweight, T.display);
-  startText(ctx, T, T.name, x, H * 0.724, W);
-  ctx.fillStyle = CREAM;
-  spaced(ctx, "0.18em");
-  fitFont(ctx, T.sub, W * 0.45, W * 0.024, 900, CARD_FONT_TEXT);
-  startText(ctx, T, T.sub, x, H * 0.782, W);
-  spaced(ctx, "0px");
-  if(PATROL_ACCENT[id]){
     ctx.save();
-    ctx.strokeStyle = PATROL_ACCENT[id];
-    ctx.lineWidth = W * 0.0185;
-    ctx.beginPath(); ctx.arc(cx, cy, R - W * 0.0093, 0, Math.PI * 2); ctx.stroke();
-    ctx.lineWidth = W * 0.0056;
-    ctx.setLineDash([W * 0.016, W * 0.012]);
-    ctx.beginPath(); ctx.arc(cx, cy, R - W * 0.022, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
+    profileBand(ctx, id, W, H, T);
     ctx.restore();
+    ctx.direction = T.rtl ? "rtl" : "ltr";
+    ctx.textAlign = "center";
+    ctx.fillStyle = ink;
+    fitFont(ctx, T.name, W * 0.56, W * 0.105, T.dweight, T.display);
+    ctx.fillText(T.name, cx, H * 0.842);
+    ctx.fillStyle = CREAM;
+    spaced(ctx, "0.18em");
+    fitFont(ctx, T.sub, W * 0.40, W * 0.024, 900, CARD_FONT_TEXT);
+    ctx.fillText(T.sub, cx, H * 0.895);
+    spaced(ctx, "0px");
+  }else{
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
+    drawMark(ctx, id, W * 0.30, H * 0.06, W * 0.62, W * 0.62, ink, T.rtl);
+    ctx.restore();
+    const x = W * 0.167;
+    ctx.fillStyle = ink;
+    fitFont(ctx, T.name, W * 0.62, W * 0.118, T.dweight, T.display);
+    startText(ctx, T, T.name, x, H * 0.724, W);
+    ctx.fillStyle = CREAM;
+    spaced(ctx, "0.18em");
+    fitFont(ctx, T.sub, W * 0.45, W * 0.024, 900, CARD_FONT_TEXT);
+    startText(ctx, T, T.sub, x, H * 0.782, W);
+    spaced(ctx, "0px");
   }
+  if(st.img || PATROL_ACCENT[id]) profileRing(ctx, id, W, H, R);
 }
 
-/* Post, 4:5. Photo in the top 60% with a slanted cut, the patrol block below
-   with the mark cropped off the bottom corner. */
+/* Post, 4:5. The photo takes the top 80% with a slanted cut; the patrol band
+   below carries the name, one line and the mark cropped off the corner. */
 function drawPostCard(ctx, W, H, st){
   const id = st.patrol, T = cardText(id), ink = onFlood(id);
   ctx.fillStyle = PATROL_HEX[id];
@@ -2210,48 +2263,33 @@ function drawPostCard(ctx, W, H, st){
   const r = photoRegion("post", W, H);
   if(st.img){
     drawPhoto(ctx, st.img, r, st);
-    drawMark(ctx, id, T.rtl ? -W * 0.074 : W * 0.556, H * 0.674, W * 0.518, W * 0.518, ink, T.rtl);
+    drawMark(ctx, id, T.rtl ? -W * 0.02 : W * 0.72, H * 0.80 + W * 0.005, W * 0.30, W * 0.30, ink, T.rtl);
   }else{
     drawMark(ctx, id, T.rtl ? -W * 0.13 : W * 0.43, -H * 0.03, W * 0.70, W * 0.70, ink, T.rtl);
   }
-  /* The caption sits on a cream plate when it is over a photo, because the
-     photo could be any colour at all. */
-  const capSize = W * 0.024, padX = W * 0.044, top = W * 0.037;
-  ctx.font = `800 ${capSize}px ${CARD_FONT_TEXT}`;
-  spaced(ctx, "0.18em");
-  const capW = ctx.measureText(T.sub).width;
-  const knotW = W * 0.033;
-  if(st.img){
-    ctx.fillStyle = CREAM;
-    const plateW = knotW + W * 0.019 + capW + W * 0.04;
-    ctx.fillRect(T.rtl ? W - padX - plateW + W * 0.02 : padX - W * 0.02, top - W * 0.012, plateW, knotW * 1.5 + W * 0.024);
-  }
-  drawKnot(ctx, id, T.rtl ? W - padX - knotW : padX, top, knotW);
-  ctx.fillStyle = st.img ? NAVY : CREAM;
-  startText(ctx, T, T.sub, padX + knotW + W * 0.019, top + knotW * 0.95, W);
-  spaced(ctx, "0px");
+  captionRow(ctx, T, id, T.sub, W * 0.044, W * 0.084, W, W * 0.024, !!st.img);
   /* The fleur rides the photo's slanted edge, in a patrol-colour disc so it
      reads over any photo. With no photo there is no edge for it to sit on. */
   if(st.img){
-    const fx = T.rtl ? W - W * 0.096 : W * 0.096, fy = H * 0.551, fr = W * 0.046;
+    const fx = T.rtl ? W - W * 0.096 : W * 0.096, fy = edgeY(r, fx), fr = W * 0.046;
     ctx.fillStyle = PATROL_HEX[id];
     ctx.beginPath(); ctx.arc(fx, fy, fr, 0, Math.PI * 2); ctx.fill();
     drawFleur(ctx, fx, fy, fr * 1.15, CREAM);
   }
   const x = W * 0.052;
   ctx.fillStyle = ink;
-  fitFont(ctx, T.name, W * (st.img ? 0.50 : 0.86), W * 0.141, T.dweight, T.display);
-  startText(ctx, T, T.name, x, H * 0.899, W);
+  fitFont(ctx, T.name, W * (st.img ? 0.60 : 0.86), W * (st.img ? 0.115 : 0.141), T.dweight, T.display);
+  startText(ctx, T, T.name, x, H * (st.img ? 0.912 : 0.899), W);
   ctx.fillStyle = CREAM;
   spaced(ctx, "0.18em");
-  fitFont(ctx, T.post, W * (st.img ? 0.48 : 0.86), W * 0.026, 800, CARD_FONT_TEXT);
-  startText(ctx, T, T.post, x, H * 0.956, W);
+  fitFont(ctx, T.post, W * (st.img ? 0.60 : 0.86), W * (st.img ? 0.024 : 0.026), 800, CARD_FONT_TEXT);
+  startText(ctx, T, T.post, x, H * (st.img ? 0.958 : 0.956), W);
   spaced(ctx, "0px");
   wolvesFrame(ctx, id, W, H);
 }
 
 /* Story, 9:16. The top and bottom 250px stay clear for Instagram's own
-   buttons: only the quiet captions live there. */
+   buttons: only the quiet captions live there. The photo takes the top 74%. */
 function drawStoryCard(ctx, W, H, st){
   const id = st.patrol, T = cardText(id), ink = onFlood(id);
   ctx.fillStyle = PATROL_HEX[id];
@@ -2259,38 +2297,27 @@ function drawStoryCard(ctx, W, H, st){
   const r = photoRegion("story", W, H);
   if(st.img){
     drawPhoto(ctx, st.img, r, st);
-    drawMark(ctx, id, T.rtl ? -W * 0.11 : W * 0.555, H * 0.594, W * 0.555, W * 0.555, ink, T.rtl);
+    drawMark(ctx, id, T.rtl ? -W * 0.08 : W * 0.68, H * 0.745, W * 0.40, W * 0.40, ink, T.rtl);
   }else{
     drawMark(ctx, id, T.rtl ? -W * 0.10 : W * 0.14, H * 0.16, W * 0.96, W * 0.96, ink, T.rtl);
   }
-  /* Caption, centred at the foot of the top band. */
-  const knotW = W * 0.033, capSize = W * 0.026;
-  ctx.font = `800 ${capSize}px ${CARD_FONT_TEXT}`;
-  spaced(ctx, T.ar ? "0px" : "0.06em");
-  const capW = ctx.measureText(T.story).width;
-  const gap = W * 0.022, rowW = knotW + gap + capW;
-  const left = (W - rowW) / 2, baseY = H * 0.115;
-  drawKnot(ctx, id, T.rtl ? left + capW + gap : left, baseY - knotW * 1.25, knotW);
-  ctx.fillStyle = CREAM;
-  ctx.direction = T.rtl ? "rtl" : "ltr";
-  ctx.textAlign = "left";
-  ctx.fillText(T.story, T.rtl ? left : left + knotW + gap, baseY);
-  spaced(ctx, "0px");
-  /* Name and tagline under the photo, kept clear of the mark's side. */
+  captionRow(ctx, T, id, T.story, null, H * 0.098, W, W * 0.026, !!st.img);
+  /* Name and tagline in the band, kept clear of the mark's side. */
   const x = W * 0.067;
   ctx.fillStyle = ink;
-  fitFont(ctx, T.name, W * (st.img ? 0.48 : 0.86), W * 0.156, T.dweight, T.display);
-  startText(ctx, T, T.name, x, st.img ? H * 0.682 : H * 0.735, W);
+  fitFont(ctx, T.name, W * (st.img ? 0.60 : 0.86), W * (st.img ? 0.15 : 0.156), T.dweight, T.display);
+  startText(ctx, T, T.name, x, H * (st.img ? 0.818 : 0.735), W);
   ctx.fillStyle = CREAM;
-  fitFont(ctx, T.tag, W * (st.img ? 0.46 : 0.86), W * 0.041, 700, T.ar ? '"Cairo",sans-serif' : CARD_FONT_TEXT);
-  startText(ctx, T, T.tag, x, st.img ? H * 0.718 : H * 0.772, W);
-  /* The address at the head of the bottom band. */
+  fitFont(ctx, T.tag, W * (st.img ? 0.58 : 0.86), W * (st.img ? 0.042 : 0.041), 700, T.ar ? '"Cairo",sans-serif' : CARD_FONT_TEXT);
+  /* Arabic letters descend below the line, where Bravely's capitals do not. */
+  startText(ctx, T, T.tag, x, H * (st.img ? 0.853 : 0.772) + (T.ar ? H * 0.012 : 0), W);
+  /* The address, in the quiet bottom band. */
   ctx.fillStyle = CREAM;
   ctx.direction = "ltr";
   ctx.textAlign = "center";
   spaced(ctx, "0.18em");
   ctx.font = `900 ${W * 0.026}px ${CARD_FONT_TEXT}`;
-  ctx.fillText("WSJPATROL.COM", W / 2, H * 0.885);
+  ctx.fillText("WSJPATROL.COM", W / 2, H * (st.img ? 0.94 : 0.885));
   spaced(ctx, "0px");
   wolvesFrame(ctx, id, W, H);
 }
@@ -2308,12 +2335,12 @@ function drawWallCard(ctx, W, H, st){
   drawKnot(ctx, id, T.rtl ? W - W * 0.074 - knotW : W * 0.074, PATROL_ACCENT[id] ? W * 0.026 : 0, knotW);
   const x = W * 0.074;
   ctx.fillStyle = ink;
-  fitFont(ctx, T.name, W * 0.85, W * 0.156, T.dweight, T.display);
-  startText(ctx, T, T.name, x, H * 0.858, W);
+  fitFont(ctx, T.name, W * 0.85, W * (st.img ? 0.13 : 0.156), T.dweight, T.display);
+  startText(ctx, T, T.name, x, H * (st.img ? 0.885 : 0.858), W);
   ctx.fillStyle = CREAM;
   spaced(ctx, "0.18em");
-  fitFont(ctx, T.sub, W * 0.85, W * 0.037, 900, CARD_FONT_TEXT);
-  startText(ctx, T, T.sub, x, H * 0.930, W);
+  fitFont(ctx, T.sub, W * 0.85, W * (st.img ? 0.034 : 0.037), 900, CARD_FONT_TEXT);
+  startText(ctx, T, T.sub, x, H * (st.img ? 0.945 : 0.930), W);
   spaced(ctx, "0px");
   wolvesFrame(ctx, id, W, H);
 }
