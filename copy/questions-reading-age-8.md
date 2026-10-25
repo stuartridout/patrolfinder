@@ -6,9 +6,9 @@ Oct 25, 2026 · @Stuart Ridout
 
 ## Summary
 
-Both question sets come out a quarter to a third shorter, in words a reader of eight, or someone reading in a second language, gets first time. The 1907 set drops from 248 words to 186 and the today set from 316 to 202, with the water question left as it is. Outside that question, no answer is longer than seven words; the longest used to be 13.
+Both question sets come out a fifth to a third shorter, in words a reader of eight, or someone reading in a second language, gets first time. The 1907 set drops from 248 words to 193 and the today set from 316 to 207, with the water question left as it is. Outside that question, no answer is longer than eight words; the longest used to be 13.
 
-Reading age 8 here means short sentences, everyday words and no idioms. Words like "kudu horn", "deerstalking", "clocked", "hold your nerve", "spirits", "highlight reel" and "Insta" are gone.
+Reading age 8 here means short sentences, everyday words and no idioms. Words like "kudu horn", "deerstalking", "clocked", "hold your nerve", "spirits" and "highlight reel" are gone.
 
 This is a proposal only. Nothing on the site has changed.
 
@@ -17,14 +17,14 @@ This is a proposal only. Nothing on the site has changed.
 The scoring is untouched, so a Wolf in 1907 is still a Wolf today. Only the words change.
 
 - **Same patrol behind every answer.** Each answer keeps its patrol, its order and its weight. The tables below show which patrol each answer points to; on screen the order is shuffled.
-- **Both sets still mirror each other.** Same seven questions, same four kinds of answer. Ten answers now read the same in both sets, up from four, so the 1907 and today results compare more cleanly.
+- **Both sets still mirror each other.** Same seven questions, same four kinds of answer. Nine answers now read the same in both sets, up from four, so the 1907 and today results compare more cleanly.
 - **Each patrol keeps its character.** Wolves keep the team together, Bulls take the heavy work, Curlews notice first and raise the call, Ravens see what others miss.
 - **The water question belongs to the Safety Team.** It stays word for word until they approve a change. A simpler version for them to look at is in its own section below.
-- **Plain and literal.** No idioms, slang or contractions, because they do not survive translation.
+- **Plain and literal.** No idioms, and slang and contractions kept to two: "Insta" (Q7 today) and "doesn't" (Q4 1907 Ravens). Translators should know both are deliberate.
 
 ## Brownsea 1907 set
 
-The 1907 set goes from 248 words to 186, and every answer outside the water question now fits in seven words or fewer. Each question is in bold, with its four answers under it and the patrol each answer scores for.
+The 1907 set goes from 248 words to 193, and every answer outside the water question now fits in eight words or fewer. Each question is in bold, with its four answers under it and the patrol each answer scores for.
 
 |  | Before | After |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ The 1907 set goes from 248 words to 186, and every answer outside the water ques
 
 ## Camp today set
 
-The today set had the most to lose: it goes from 316 words to 202, and its longest answer outside the water question drops from 13 words to seven. One answer changes meaning a little on purpose. Q2 Ravens was "kettle on for everyone", which is helpful rather than clever. It now matches its 1907 twin: find a quicker way.
+The today set had the most to lose: it goes from 316 words to 207, and its longest answer outside the water question drops from 13 words to eight. One answer changes meaning in the 1907 set: Q2 Ravens is now hot chocolate for everyone in both sets, where the 1907 version used to be finding a quicker way to get the cocoa on.
 
 |  | Before | After |
 | --- | --- | --- |
@@ -114,18 +114,18 @@ The Bulls answer loses "weighing up the situation". The Safety Team may want tha
 
 ## The numbers
 
-A person now reads 27 to 29 words per screen, down from 35 in the 1907 set and 45 in the today set. "After" leaves the water question as it is.
+A person now reads 28 to 30 words per screen, down from 35 in the 1907 set and 45 in the today set. "After" leaves the water question as it is.
 
 |  | 1907 before | 1907 after | Today before | Today after |
 | --- | --- | --- | --- | --- |
-| Words, all seven screens | 248 | 186 | 316 | 202 |
-| Words if the Safety Team takes the water suggestion | 248 | 180 | 316 | 196 |
-| Words per screen, average (longest) | 35 (42) | 27 (36) | 45 (54) | 29 (36) |
+| Words, all seven screens | 248 | 193 | 316 | 207 |
+| Words if the Safety Team takes the water suggestion | 248 | 187 | 316 | 201 |
+| Words per screen, average (longest) | 35 (42) | 28 (36) | 45 (54) | 30 (36) |
 | Words per question, average (longest) | 7.6 (10) | 6.1 (7) | 9.9 (13) | 7.1 (9) |
-| Words per answer outside Q6, average (longest) | 6.9 (10) | 4.7 (7) | 9.0 (13) | 5.1 (7) |
-| Reading grade, Flesch-Kincaid (approximate) | 2.4 | 1.4 | 3.1 | 1.0 |
+| Words per answer outside Q6, average (longest) | 6.9 (10) | 5.0 (8) | 9.0 (13) | 5.3 (8) |
+| Reading grade, Flesch-Kincaid (approximate) | 2.4 | 1.4 | 3.1 | 1.2 |
 
-Reading age 8 is about grade 3 on the Flesch-Kincaid scale. That scale counts only sentence and syllable length, so it rated the old text easier than it was. Short rare words like "kudu", "clocked" and "Insta" passed as easy, and those are the words this rewrite removes.
+Reading age 8 is about grade 3 on the Flesch-Kincaid scale. That scale counts only sentence and syllable length, so it rated the old text easier than it was. Short rare words like "kudu" and "clocked" passed as easy, and those are the words this rewrite removes.
 
 ## What happens next
 
