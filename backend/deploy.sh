@@ -39,7 +39,7 @@ else
   APP="${APP:-wsjpatrol-api}"
 fi
 STORAGE="${STORAGE:-stwsjpatrol}"
-REUNION_ENDS="${REUNION_ENDS:-2026-09-06}"
+REUNION_ENDS="${REUNION_ENDS:-2027-08-24}"
 ALLOWED_ORIGIN="${ALLOWED_ORIGIN:-https://wsjpatrol.com,https://www.wsjpatrol.com,https://stuartridout.github.io}"
 
 CODE_ONLY=0
