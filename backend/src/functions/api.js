@@ -77,7 +77,7 @@ function corsHeaders(request){
 }
 
 function reunionEnds(){
-  return process.env.REUNION_ENDS || "2026-09-06";
+  return process.env.REUNION_ENDS || "2027-08-24";
 }
 
 /* The last second of the seventh day after Reunion ends. */
