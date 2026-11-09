@@ -23,7 +23,7 @@ Patrol Finder is a quiz. It doesn't ask who you are. It collects no name, no ema
 | Wall card: a JPEG or PNG rendered on the phone, usually a face, with the name and one line the person typed, plus the patrol | Yes. An image of a person, often a child, and a typed name | Only on tapping "Add me to the wall" after ticking the consent box | The patrol wall: the TV at the stand (`viewer.html`) and the wall screen in the app | Private Blob container `photos` and a Table `photos` row (id, patrol, status, type, created, reports). UK South | Anyone, while the card is approved and the wall switch is on. The team sees every card and status | 7 days after `REUNION_ENDS` (2027-08-24), so 31 Aug 2027. Sooner if reported or deleted |
 | Report: the id of a card | No | Tapping the flag on a card | Takes the card off the wall at once for the team to look at | `status` and `reports` on the card's row | The team | With the card |
 | Upload rate limit key: requester IP and the hour | Yes, transiently | On uploading a card | 12 uploads per IP per hour | The function's memory only. Never written to storage | Nobody | Within the hour, or on restart |
-| Legacy sign-up: email, patrol, time | Yes | The Gilwell Reunion 2026 version of the app. The screen is gone, the API endpoint remains | Pavilion co-design updates | Table `signups`, UK South | The team (console CSV) | No automatic deletion. See open points |
+| Legacy sign-up: email, patrol, time | Yes | The Gilwell Reunion 2026 version of the app. The screen is gone, the API endpoint remains | Pavilion co-design updates, which people asked for | Table `signups`, UK South | The team (console CSV) | Kept for that purpose (Stuart, 9 Nov 2026). No date yet. See open points |
 | On the phone: chosen language (`pf.lang`), last known switches (`pf.flags`), the service worker's cache of the app | No | While using the app | Open in your language, work with no signal | The person's own browser | The person | When they clear site data |
 | Platform logs: Function App logs and Application Insights request telemetry | Weakly. Azure Monitor drops client IPs by default (`0.0.0.0` after geolocation) | Every request | Operations | Azure Monitor, UK South | Azure subscription users | Default 90 days. Confirm `DisableIpMasking` is not set |
 | GitHub Pages access logs for the static site | Weakly (IP, user agent) | Every page load | GitHub's own operations | GitHub | GitHub, under its privacy statement. Not visible to us | GitHub's policy |
@@ -39,7 +39,7 @@ Patrol Finder is a quiz. It doesn't ask who you are. It collects no name, no ema
 
 - Tally and quiz runs: not personal data. If the controller prefers to treat them as personal data, legitimate interests (running a fair activity).
 - Wall cards: consent, given by the tick "Yes, put my card on the wall. It's optional." after four facts are shown in the person's language: anyone can see it, when it goes up (straight away, or checked first), anyone can report it, and the date everything is deleted. Withdrawal: report the card from the wall, which takes it down at once, or ask the stand team. Most participants are 14 to 17 and can consent for themselves under UK law. Younger visitors come with an adult, and the stand team should be briefed to involve the adult.
-- Legacy sign-ups: consent at the time. The purpose has lapsed. Delete.
+- Legacy sign-ups: consent at the time, to hear about the Pavilion. Kept for that purpose (Stuart, 9 Nov 2026). The purpose ends when the update is sent, and the list goes with it.
 
 ## Where the data goes
 
@@ -62,7 +62,7 @@ The data is collected in Poland at the Jamboree and stored in the UK. No persona
 - Wall cards: deleted 7 days after `REUNION_ENDS`. Three mechanisms keep the promise: a daily timer at 03:17 UTC, a cutoff check on every read, and a sweep kicked off by the first request after the cutoff. The console can delete one card or purge all. A report takes a card off the wall before any human sees it.
 - `REUNION_ENDS` must be the same in `index.html` and the Function App's settings, because the app shows people the date it computes. The live API still carried the old Reunion date on 31 Oct 2026, so every upload was refused. Redeploy with 2027-08-24 and check `/config` returns `deletedAfter` of 31 Aug 2027.
 - Runs and tally: reset from the console. Proposed: reset after the Jamboree once the runs CSV is exported for the bias check.
-- Legacy sign-ups: reset from the console. Proposed: now.
+- Legacy sign-ups: kept (Stuart, 9 Nov 2026) for the Pavilion update they asked for. Proposed: send the update, then clear the list from the console, and no later than the wall's date, 31 Aug 2027.
 - Logs: Azure Monitor defaults, about 90 days.
 - Backups: none, deliberately. The promise is deletion, and a backup would outlive it.
 
@@ -83,7 +83,7 @@ The data is collected in Poland at the Jamboree and stored in the UK. No persona
 
 ## Open points
 
-1. Delete the legacy sign-ups from the console and remove `POST /email` from the API.
+1. Set a date for the legacy sign-ups: send the Pavilion update, then clear them. Remove `POST /email` from the API, since the screen is gone and nothing should land there.
 2. Redeploy the API with `REUNION_ENDS=2027-08-24`.
 3. Decide who holds the admin token at the Jamboree, and rotate it afterwards.
 4. Link the controller's privacy notice from the app footer and the stand.
